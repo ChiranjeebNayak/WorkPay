@@ -31,23 +31,23 @@ function CustomTabBar({ state, descriptors, navigation }) {
           }
         };
 
-        let iconName;
-        switch (route.name) {
-          case 'home':
-            iconName = 'home';
-            break;
-          case 'attendance':
-            iconName = 'calendar';
-            break;
-          case 'payment':
-            iconName = 'card';
-            break;
-          case 'leaves':
-            iconName = 'document-text';
-            break;
-          default:
-            iconName = 'ellipse';
-        }
+let iconName;
+switch (route.name.toLowerCase()) {
+  case 'home':
+    iconName = 'home-outline';
+    break;
+  case 'attendance':
+    iconName = 'calendar-outline';
+    break;
+  case 'payment':
+    iconName = 'card-outline';
+    break;
+  case 'leave':
+    iconName = 'document-text-outline';
+    break;
+  default:
+    iconName = 'ellipse-outline';
+}
 
         return (
           <TouchableOpacity
@@ -59,9 +59,9 @@ function CustomTabBar({ state, descriptors, navigation }) {
             <Ionicons
               name={iconName}
               size={24}
-              color={isFocused ? '#22876A' : '#999'}
+              color={isFocused ? '#1e90ff' : '#999'}
             />
-            <Text style={{ color: isFocused ? '#22876A' : '#999', fontSize: 12 }}>
+            <Text style={{ color: isFocused ? '#1e90ff' : '#999', fontSize: 12 }}>
               {label.charAt(0).toUpperCase() + label.slice(1)}
             </Text>
           </TouchableOpacity>
@@ -74,10 +74,10 @@ function CustomTabBar({ state, descriptors, navigation }) {
 export default function EmployeeLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <CustomTabBar {...props} />}>
-      <Tabs.Screen name="home" options={{ title: 'Home' }} />
-      <Tabs.Screen name="attendance" options={{ title: 'Attendance' }} />
-      <Tabs.Screen name="payment" options={{ title: 'Payment' }} />
-      <Tabs.Screen name="leaves" options={{ title: 'Leaves' }} />
+      <Tabs.Screen name="Home" options={{ title: 'Home' }} />
+      <Tabs.Screen name="Attendance" options={{ title: 'Attendance' }} />
+      <Tabs.Screen name="Payment" options={{ title: 'Payment' }} />
+      <Tabs.Screen name="Leave" options={{ title: 'Leaves' }} />
     </Tabs>
   );
 }

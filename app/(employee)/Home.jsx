@@ -1,87 +1,79 @@
-import {  ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
-import Feather from '@expo/vector-icons/Feather';
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import Feather from '@expo/vector-icons/Feather'
+import { SafeAreaView } from "react-native-safe-area-context"
+import { useEffect, useState } from "react"
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import { useRouter } from "expo-router"
 
 function Home() {
-
-    const [dateTime, setDateTime] = useState(new Date());
+  const [dateTime, setDateTime] = useState(new Date());
+  const router = useRouter();
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setDateTime(new Date());
-    }, 1000); // update every second
+      setDateTime(new Date())
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
-    return () => clearInterval(timer); // cleanup
-  }, []);
-
-  // Format time → HH:MM
-  const timeString = dateTime.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  // Format date → Day Month Year
-  const dateString = dateTime.toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const timeString = dateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  const dateString = dateTime.toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })
 
   return (
     <SafeAreaView style={styles.mainContainer}>
-    <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" />
 
-      {/* header with user information */}
-        <View style={styles.headerContainer}>
-                <View style={styles.headerTitleContainer}>
-                    <Text style={styles.headerTitle}>Welcome, User</Text>
-                    <Text style={styles.headerSubtitle}>Employee ID: 12345</Text>
-                </View>
-                <Feather name="log-out" size={24} color="white" />
+      {/* Header */}
+      <View style={styles.headerContainer}>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>Welcome, User</Text>
+          <Text style={styles.headerSubtitle}>Employee ID: 12345</Text>
         </View>
+        <TouchableOpacity onPress={() => router.push('/EmployeeLogin')}>
+          <Feather name="log-out" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
-        <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40, alignItems: "center" }}>
 
-        {/* check in and out card */}
+        {/* Time + Check In */}
         <View style={styles.checkInOutContainer}>
-                {/* time and date container */}
-                <View style={styles.timeDateContainer}>
-                        <Text style={{color:'#fff', fontSize:28, fontWeight:'bold'}}>{timeString}</Text>
-                        <Text style={{color:'#fff', fontSize:36}}>{dateString}</Text>
-                </View>
-                {/* check in  buttons */}
-                <TouchableOpacity style={styles.buttonContainer}>
-                    <MaterialCommunityIcons name="hand-pointing-up" size={75} color="white" />
-                    <Text style={{color:'#fff', fontSize:24, fontWeight:'bold'}}>Check In</Text>
-                </TouchableOpacity>
-                 {/* check in  buttons */}
-                {/* <TouchableOpacity style={[styles.buttonContainer,{backgroundColor:'#ff4d6d'}]}>
-                    <MaterialCommunityIcons name="hand-pointing-down" size={75} color="white" />
-                    <Text style={{color:'#fff', fontSize:24, fontWeight:'bold'}}>Check Out</Text>
-                </TouchableOpacity> */}
+          <View style={styles.timeDateContainer}>
+            <Text style={styles.timeText}>{timeString}</Text>
+            <Text style={styles.dateText}>{dateString}</Text>
+          </View>
 
-            {/* details container */}
-            <View style={styles.detailsContainer}>
-                    <View style={styles.IndividualDetails}>
-                                <MaterialCommunityIcons name="clock-in" size={30} color="white" />
-                                <Text style={{color:'#fff', fontSize:16, fontWeight:'bold'}}>-- | --</Text>
-                                <Text style={{color:'#fff', fontSize:16, fontWeight:'bold'}}>Check In</Text>
-                    </View>
-                    <View style={styles.IndividualDetails}>
-                                <MaterialCommunityIcons name="clock-out" size={30} color="white" />
-                                <Text style={{color:'#fff', fontSize:16, fontWeight:'bold'}}>-- | --</Text>
-                                <Text style={{color:'#fff', fontSize:16, fontWeight:'bold'}}>Check Out</Text>
-                    </View>
-                    <View style={styles.IndividualDetails}>
-                               <MaterialCommunityIcons name="clock-plus-outline" size={26} color="white" />
-                                <Text style={{color:'#fff', fontSize:16, fontWeight:'bold'}}>-- | --</Text>
-                                <Text style={{color:'#fff', fontSize:16, fontWeight:'bold'}}>OverTime</Text>
-                    </View>
-            </View>
+          <TouchableOpacity style={styles.checkButton}>
+            <MaterialCommunityIcons name="hand-pointing-up" size={70} color="white" />
+            <Text style={styles.checkButtonText}>Check In</Text>
+          </TouchableOpacity>
+          {/* Example for Check Out */}
+          {/* <TouchableOpacity style={[styles.checkButton, { backgroundColor: "#ff4d6d" }]}>
+            <MaterialCommunityIcons name="hand-pointing-down" size={70} color="white" />
+            <Text style={styles.checkButtonText}>Check Out</Text>
+          </TouchableOpacity> */}
         </View>
-    </ScrollView>
+
+        {/* Details */}
+        <View style={styles.detailsCard}>
+          <View style={styles.IndividualDetails}>
+            <MaterialCommunityIcons name="clock-in" size={28} color="#4da6ff" />
+            <Text style={styles.detailTime}>-- | --</Text>
+            <Text style={styles.detailLabel}>Check In</Text>
+          </View>
+          <View style={styles.IndividualDetails}>
+            <MaterialCommunityIcons name="clock-out" size={28} color="#ff6666" />
+            <Text style={styles.detailTime}>-- | --</Text>
+            <Text style={styles.detailLabel}>Check Out</Text>
+          </View>
+          <View style={styles.IndividualDetails}>
+            <MaterialCommunityIcons name="clock-plus-outline" size={28} color="#ffcc66" />
+            <Text style={styles.detailTime}>-- | --</Text>
+            <Text style={styles.detailLabel}>OverTime</Text>
+          </View>
+        </View>
+
+      </ScrollView>
     </SafeAreaView>
   )
 }
@@ -89,78 +81,93 @@ function Home() {
 export default Home
 
 const styles = StyleSheet.create({
-    mainContainer:{
-        flex: 1,
-        backgroundColor: '#111a22',
-    },
-  container: {
+  mainContainer: {
+    flex: 1,
     backgroundColor: '#111a22',
-    justifyContent:"center",
-    alignItems:"center"
   },
-  headerContainer:{
+  headerContainer: {
     width: '100%',
-    padding: 10,
+    padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  headerTitleContainer:{
-    flex: 1,
-    alignItems: 'start',
-    gap:5,
-    paddingLeft:10
+  headerTitleContainer: {
+    gap: 4,
   },
-  headerTitle:{
+  headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff'
+    color: '#fff',
   },
-  headerSubtitle:{
+  headerSubtitle: {
     fontSize: 14,
-    color: '#fff'
+    color: '#ccc',
   },
-  checkInOutContainer:{
-    width: '95%',
-    padding: 10,
-    gap:40,
-    alignItems: 'center',
-    marginTop: 20
-  },
-  timeDateContainer:{
-    width: '100%',
-    alignItems: 'center',
-    gap:10
-  },
-buttonContainer: {
-  width: '60%',
-  height: 190,
-  justifyContent: 'center',
-  alignItems: 'center',
-  borderRadius: "100%",
-  backgroundColor: '#1e90ff', // modern blue accent
-  gap: 10,
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 6 },
-  shadowOpacity: 0.3,
-  shadowRadius: 8,
-  elevation: 10,
-},
 
-  detailsContainer:{
-    width: '95%',
-    padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
+  checkInOutContainer: {
+    width: '90%',
+    backgroundColor: '#1e262f',
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 20,
     alignItems: 'center',
+    gap: 30,
   },
-  IndividualDetails:{
+  timeDateContainer: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  timeText: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+  dateText: {
+    color: '#ccc',
+    fontSize: 18,
+  },
+  checkButton: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1e90ff',
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  checkButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+
+  detailsCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '90%',
+    backgroundColor: '#2a323d',
+    borderRadius: 12,
+    paddingVertical: 20,
+    marginTop: 20,
+  },
+  IndividualDetails: {
     flex: 1,
     alignItems: 'center',
-    gap: 10,
-    marginVertical: 10
-  }
+    gap: 6,
+  },
+  detailTime: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  detailLabel: {
+    color: '#ccc',
+    fontSize: 14,
+  },
 })
