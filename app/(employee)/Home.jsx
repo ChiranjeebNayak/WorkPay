@@ -57,7 +57,7 @@ function Home() {
                     <Text style={{color:'#fff', fontSize:24, fontWeight:'bold'}}>Check In</Text>
                 </TouchableOpacity>
                  {/* check in  buttons */}
-                {/* <TouchableOpacity style={[styles.buttonContainer,{backgroundColor:'#ff4d4d'}]}>
+                {/* <TouchableOpacity style={[styles.buttonContainer,{backgroundColor:'#ff4d6d'}]}>
                     <MaterialCommunityIcons name="hand-pointing-down" size={75} color="white" />
                     <Text style={{color:'#fff', fontSize:24, fontWeight:'bold'}}>Check Out</Text>
                 </TouchableOpacity> */}
@@ -132,15 +132,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap:10
   },
-  buttonContainer:{
-    width: '60%',
-    height: 180,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius:"100%",
-    backgroundColor: '#16bd44',
-    gap:10
-  },
+buttonContainer: {
+  width: '60%',
+  height: 190,
+  justifyContent: 'center',
+  alignItems: 'center',
+  borderRadius: "100%",
+  backgroundColor: '#1e90ff', // modern blue accent
+  gap: 10,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.3,
+  shadowRadius: 8,
+  elevation: 10,
+},
+
   detailsContainer:{
     width: '95%',
     padding: 10,
