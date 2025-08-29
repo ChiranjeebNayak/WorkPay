@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   summaryContainer: {
     width: '95%',
     padding: 20,
-    backgroundColor: '#1e1e2a',
+    backgroundColor: '#1e262f',
     borderRadius: 10,
     alignItems: 'center',
     marginBottom: 20,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 15,
     marginBottom: 10,
-    backgroundColor: '#1e1e2a',
+    backgroundColor: '#2a323d',
     borderRadius: 10
   },
   historyDate: {
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '85%',
     padding: 20,
-    backgroundColor: '#1e1e2a',
+    backgroundColor: '#1e262f',
     borderRadius: 10,
     alignItems: 'center'
   },
@@ -308,6 +308,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    backgroundColor: '#1e1e2a',
   },
 });

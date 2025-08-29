@@ -1,139 +1,186 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import {KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native'
+import {
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 function EmployeeLogin() {
-
-    const [isEmployee, setIsEmployee] = useState(true);
-    const [employeeLogin, setEmployeeLogin] = useState({ phone: '', password: '' });
-    const [adminLogin, setAdminLogin] = useState({ email: '', password: '' });
-    const router = useRouter();
+  const [isEmployee, setIsEmployee] = useState(true);
+  const [employeeLogin, setEmployeeLogin] = useState({ phone: '', password: '' });
+  const [adminLogin, setAdminLogin] = useState({ email: '', password: '' });
+  const router = useRouter();
 
   return (
- <KeyboardAvoidingView
-        behavior="padding"
-        style={styles.container}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
-      >
-        {/* header */}
-            <View style={styles.header}>
-                <Text style={{color:'#fff', fontSize:24}}>Logo PlaceHolder</Text>
-                <Text style={styles.title}>Work Pay</Text>
-            </View>
-        {/* toggle tab */}
-            <View style={styles.toggleContainer}>
-                <TouchableOpacity style={isEmployee ? styles.selectedTab : styles.unselectedTab} onPress={() => setIsEmployee(true)}>
-                    <Text style={styles.toggleText}>Employee Login</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={!isEmployee ? styles.selectedTab : styles.unselectedTab} onPress={() => setIsEmployee(false)}>
-                    <Text style={styles.toggleText}>Admin</Text>
-                </TouchableOpacity>
-            </View>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.container}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.logo}>Logo Placeholder</Text>
+        <Text style={styles.title}>Work Pay</Text>
+      </View>
 
-        {/* employee form */}
-            {isEmployee && (
-                <View style={styles.formContainer}>
-                    <Text  style={styles.label}>Phone Number:</Text>
-                    <TextInput onChangeText={(text) => setEmployeeLogin({ ...employeeLogin, phone: text })} style={styles.input} placeholder="Enter your phone number" placeholderTextColor="#aaa" />
-                    <Text style={styles.label}>Password:</Text>
-                    <TextInput onChangeText={(text) => setEmployeeLogin({ ...employeeLogin, password: text })} style={styles.input} placeholder="Enter your password" placeholderTextColor="#aaa" secureTextEntry />
-                    <TouchableOpacity onPress={() => router.push('/(employee)/Home')} style={styles.button}>
-                        <Text style={styles.buttonText}>Login</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-        {/*Admin form */}
-            {!isEmployee && (
-                <View style={styles.formContainer}>
-                    <Text style={styles.label}>Email:</Text>
-                    <TextInput onChangeText={(text) => setAdminLogin({ ...adminLogin, email: text })} style={styles.input} placeholder="Enter your email" placeholderTextColor="#aaa" />
-                    <Text style={styles.label}>Password:</Text>
-                <TextInput onChangeText={(text) => setAdminLogin({ ...adminLogin, password: text })} style={styles.input} placeholder="Enter your password" placeholderTextColor="#aaa" secureTextEntry />
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Login</Text>
-                </TouchableOpacity>
-            </View>
+      {/* Toggle */}
+      <View style={styles.toggleContainer}>
+        <TouchableOpacity
+          style={isEmployee ? styles.selectedTab : styles.unselectedTab}
+          onPress={() => setIsEmployee(true)}
+        >
+          <Text style={styles.toggleText}>Employee Login</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={!isEmployee ? styles.selectedTab : styles.unselectedTab}
+          onPress={() => setIsEmployee(false)}
+        >
+          <Text style={styles.toggleText}>Admin</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Forms */}
+      <View style={styles.formContainer}>
+        {isEmployee ? (
+          <>
+            <Text style={styles.label}>Phone Number:</Text>
+            <TextInput
+              value={employeeLogin.phone}
+              onChangeText={(text) => setEmployeeLogin({ ...employeeLogin, phone: text })}
+              style={styles.input}
+              placeholder="Enter your phone number"
+              placeholderTextColor="#aaa"
+              keyboardType="phone-pad"
+            />
+            <Text style={styles.label}>Password:</Text>
+            <TextInput
+              value={employeeLogin.password}
+              onChangeText={(text) => setEmployeeLogin({ ...employeeLogin, password: text })}
+              style={styles.input}
+              placeholder="Enter your password"
+              placeholderTextColor="#aaa"
+              secureTextEntry
+            />
+            <TouchableOpacity
+              onPress={() => router.push('/(employee)/Home')}
+              style={styles.button}
+            >
+              <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <Text style={styles.label}>Email:</Text>
+            <TextInput
+              value={adminLogin.email}
+              onChangeText={(text) => setAdminLogin({ ...adminLogin, email: text })}
+              style={styles.input}
+              placeholder="Enter your email"
+              placeholderTextColor="#aaa"
+              keyboardType="email-address"
+            />
+            <Text style={styles.label}>Password:</Text>
+            <TextInput
+              value={adminLogin.password}
+              onChangeText={(text) => setAdminLogin({ ...adminLogin, password: text })}
+              style={styles.input}
+              placeholder="Enter your password"
+              placeholderTextColor="#aaa"
+              secureTextEntry
+            />
+            <TouchableOpacity style={styles.button}>
+              <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
+          </>
         )}
+      </View>
     </KeyboardAvoidingView>
-  )
+  );
 }
 
-export default EmployeeLogin
+export default EmployeeLogin;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#111921',
     alignItems: 'center',
-    backgroundColor:"#111921"
+    justifyContent: 'center',
+    paddingHorizontal: 20,
   },
-  header:{
+  header: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  logo: {
+    color: '#fff',
+    fontSize: 22,
+    marginBottom: 5,
+  },
+  title: {
+    fontSize: 36,
+    color: '#fff',
+    fontWeight: '700',
+  },
+  toggleContainer: {
     width: '100%',
-    gap:20,
-    alignItems:'center',
-  },
-  title:{
-    fontSize:40,
-    color:'#fff',
-    fontWeight:700
-  },
-  toggleContainer:{
-    width: '90%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: '#222',
-    borderRadius:10,
-    marginTop: 20,
+    borderRadius: 10,
     height: 50,
+    marginBottom: 25,
+    overflow: 'hidden',
   },
-  toggleText:{
-    color:'#fff',
-    fontSize:18,
-    fontWeight:600
-  },
-  selectedTab:{
-    height: '100%',
+  selectedTab: {
+    flex: 1,
     backgroundColor: '#333',
-    borderRadius: 10,
-    width: '48%',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'center'
   },
-  unselectedTab:{
-    height: '100%',
+  unselectedTab: {
+    flex: 1,
     backgroundColor: '#222',
-    borderRadius: 10,
-    width: '48%',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'center'
   },
-  formContainer:{
-    width: '90%',
-    marginTop: 20
-  },
-  label:{
-    color:'#fff',
-    fontSize:18,
-    marginBottom: 5
-  },
-  input:{
-    backgroundColor: '#222',
-    borderRadius: 5,
-    padding: 10,
+  toggleText: {
     color: '#fff',
-    marginBottom: 15
+    fontSize: 18,
+    fontWeight: '600',
   },
-  button:{
-    backgroundColor: '#1172d4',
-    borderRadius: 5,
+  formContainer: {
+    width: '100%',
+  },
+  label: {
+    color: '#fff',
+    fontSize: 16,
+    marginBottom: 8,
+    marginTop: 10,
+  },
+  input: {
+    backgroundColor: '#222',
+    borderRadius: 8,
     padding: 12,
-    alignItems: 'center',
-    marginTop: 10
-  },
-  buttonText:{
     color: '#fff',
-    fontSize: 20,
-    fontWeight: 600
-  }
-
-})
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  button: {
+    backgroundColor: '#1172d4',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+});
