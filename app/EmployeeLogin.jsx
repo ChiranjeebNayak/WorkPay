@@ -1,9 +1,13 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native'
 
 function EmployeeLogin() {
 
     const [isEmployee, setIsEmployee] = useState(true);
+    const [employeeLogin, setEmployeeLogin] = useState({ phone: '', password: '' });
+    const [adminLogin, setAdminLogin] = useState({ email: '', password: '' });
+    const router = useRouter();
 
   return (
  <KeyboardAvoidingView
@@ -29,11 +33,11 @@ function EmployeeLogin() {
         {/* employee form */}
             {isEmployee && (
                 <View style={styles.formContainer}>
-                    <Text style={styles.label}>Phone Number:</Text>
-                    <TextInput style={styles.input} placeholder="Enter your phone number" placeholderTextColor="#aaa" />
+                    <Text  style={styles.label}>Phone Number:</Text>
+                    <TextInput onChangeText={(text) => setEmployeeLogin({ ...employeeLogin, phone: text })} style={styles.input} placeholder="Enter your phone number" placeholderTextColor="#aaa" />
                     <Text style={styles.label}>Password:</Text>
-                    <TextInput style={styles.input} placeholder="Enter your password" placeholderTextColor="#aaa" secureTextEntry />
-                    <TouchableOpacity style={styles.button}>
+                    <TextInput onChangeText={(text) => setEmployeeLogin({ ...employeeLogin, password: text })} style={styles.input} placeholder="Enter your password" placeholderTextColor="#aaa" secureTextEntry />
+                    <TouchableOpacity onPress={() => router.push('/(employee)/Home')} style={styles.button}>
                         <Text style={styles.buttonText}>Login</Text>
                     </TouchableOpacity>
                 </View>
@@ -42,9 +46,9 @@ function EmployeeLogin() {
             {!isEmployee && (
                 <View style={styles.formContainer}>
                     <Text style={styles.label}>Email:</Text>
-                    <TextInput style={styles.input} placeholder="Enter your email" placeholderTextColor="#aaa" />
+                    <TextInput onChangeText={(text) => setAdminLogin({ ...adminLogin, email: text })} style={styles.input} placeholder="Enter your email" placeholderTextColor="#aaa" />
                     <Text style={styles.label}>Password:</Text>
-                <TextInput style={styles.input} placeholder="Enter your password" placeholderTextColor="#aaa" secureTextEntry />
+                <TextInput onChangeText={(text) => setAdminLogin({ ...adminLogin, password: text })} style={styles.input} placeholder="Enter your password" placeholderTextColor="#aaa" secureTextEntry />
                 <TouchableOpacity style={styles.button}>
                     <Text style={styles.buttonText}>Login</Text>
                 </TouchableOpacity>
@@ -128,7 +132,8 @@ const styles = StyleSheet.create({
   },
   buttonText:{
     color: '#fff',
-    fontSize: 18
+    fontSize: 20,
+    fontWeight: 600
   }
 
 })
