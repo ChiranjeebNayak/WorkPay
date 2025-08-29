@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import { useState } from "react";
@@ -61,6 +61,7 @@ const dummyAttendance = [
     totalHours: "9h 08m",
     overtime: "0.3h",
   },
+  // ... you can add more dummy days
 ];
 
 function Attendance() {
@@ -123,36 +124,39 @@ function Attendance() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-        {/* overview container */}
-        <View style={styles.overViewContainer}>
-          <View style={styles.overViewCard}>
-            <View style={styles.row}>
-              <Text style={styles.label}>Total Working Days</Text>
-              <Text style={styles.value}>22</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Total Present Days</Text>
-              <Text style={styles.value}>20</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Total Absent Days</Text>
-              <Text style={styles.value}>2</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Total Overtime Hours</Text>
-              <Text style={styles.value}>8.5h</Text>
+      {/* FlatList for better performance */}
+      <FlatList
+        data={dummyAttendance}
+        keyExtractor={(item, index) => index.toString()}
+        contentContainerStyle={{ paddingBottom: 20 }}
+        ListHeaderComponent={
+          <View style={styles.overViewContainer}>
+            <View style={styles.overViewCard}>
+              <View style={styles.row}>
+                <Text style={styles.label}>Total Working Days</Text>
+                <Text style={styles.value}>22</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Total Present Days</Text>
+                <Text style={styles.value}>20</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Total Absent Days</Text>
+                <Text style={styles.value}>2</Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Total Overtime Hours</Text>
+                <Text style={styles.value}>8.5h</Text>
+              </View>
             </View>
           </View>
-        </View>
-
-        {/* cards container */}
-        <View style={styles.cardContainer}>
-          {dummyAttendance.map((item, index) => (
-            <DataCard key={index} data={item} />
-          ))}
-        </View>
-      </ScrollView>
+        }
+        renderItem={({ item }) => (
+          <View style={styles.cardWrapper}>
+            <DataCard data={item} />
+          </View>
+        )}
+      />
     </SafeAreaView>
   );
 }
@@ -188,11 +192,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  cardContainer: {
+  cardWrapper: {
     alignItems: "center",
-    justifyContent: "center",
     marginTop: 20,
-    gap: 20,
   },
   overViewContainer: {
     width: "100%",
