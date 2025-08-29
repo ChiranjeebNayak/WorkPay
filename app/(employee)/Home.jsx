@@ -1,8 +1,8 @@
-import {  ScrollView, StatusBar, StyleSheet, Text, View } from "react-native"
+import {  ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import Feather from '@expo/vector-icons/Feather';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
-
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 function Home() {
 
@@ -32,8 +32,8 @@ function Home() {
   return (
     <SafeAreaView style={styles.mainContainer}>
     <StatusBar barStyle="light-content" />
-    <ScrollView contentContainerStyle={styles.container}>
-        {/* header with user information */}
+
+      {/* header with user information */}
         <View style={styles.headerContainer}>
                 <View style={styles.headerTitleContainer}>
                     <Text style={styles.headerTitle}>Welcome, User</Text>
@@ -41,6 +41,9 @@ function Home() {
                 </View>
                 <Feather name="log-out" size={24} color="white" />
         </View>
+
+        <ScrollView contentContainerStyle={styles.container}>
+
         {/* check in and out card */}
         <View style={styles.checkInOutContainer}>
                 {/* time and date container */}
@@ -48,10 +51,35 @@ function Home() {
                         <Text style={{color:'#fff', fontSize:28, fontWeight:'bold'}}>{timeString}</Text>
                         <Text style={{color:'#fff', fontSize:36}}>{dateString}</Text>
                 </View>
-                {/* check in and out buttons */}
-                <View style={styles.buttonContainer}>
+                {/* check in  buttons */}
+                <TouchableOpacity style={styles.buttonContainer}>
+                    <MaterialCommunityIcons name="hand-pointing-up" size={75} color="white" />
+                    <Text style={{color:'#fff', fontSize:24, fontWeight:'bold'}}>Check In</Text>
+                </TouchableOpacity>
+                 {/* check in  buttons */}
+                {/* <TouchableOpacity style={[styles.buttonContainer,{backgroundColor:'#ff4d4d'}]}>
+                    <MaterialCommunityIcons name="hand-pointing-down" size={75} color="white" />
+                    <Text style={{color:'#fff', fontSize:24, fontWeight:'bold'}}>Check Out</Text>
+                </TouchableOpacity> */}
 
-                </View>
+            {/* details container */}
+            <View style={styles.detailsContainer}>
+                    <View style={styles.IndividualDetails}>
+                                <MaterialCommunityIcons name="clock-in" size={30} color="white" />
+                                <Text style={{color:'#fff', fontSize:16, fontWeight:'bold'}}>-- | --</Text>
+                                <Text style={{color:'#fff', fontSize:16, fontWeight:'bold'}}>Check In</Text>
+                    </View>
+                    <View style={styles.IndividualDetails}>
+                                <MaterialCommunityIcons name="clock-out" size={30} color="white" />
+                                <Text style={{color:'#fff', fontSize:16, fontWeight:'bold'}}>-- | --</Text>
+                                <Text style={{color:'#fff', fontSize:16, fontWeight:'bold'}}>Check Out</Text>
+                    </View>
+                    <View style={styles.IndividualDetails}>
+                               <MaterialCommunityIcons name="clock-plus-outline" size={26} color="white" />
+                                <Text style={{color:'#fff', fontSize:16, fontWeight:'bold'}}>-- | --</Text>
+                                <Text style={{color:'#fff', fontSize:16, fontWeight:'bold'}}>OverTime</Text>
+                    </View>
+            </View>
         </View>
     </ScrollView>
     </SafeAreaView>
@@ -66,7 +94,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#111a22',
     },
   container: {
-    flex: 1,
     backgroundColor: '#111a22',
     justifyContent:"center",
     alignItems:"center"
@@ -74,10 +101,6 @@ const styles = StyleSheet.create({
   headerContainer:{
     width: '100%',
     padding: 10,
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -100,8 +123,9 @@ const styles = StyleSheet.create({
   checkInOutContainer:{
     width: '95%',
     padding: 10,
-    gap:20,
+    gap:40,
     alignItems: 'center',
+    marginTop: 20
   },
   timeDateContainer:{
     width: '100%',
@@ -110,10 +134,27 @@ const styles = StyleSheet.create({
   },
   buttonContainer:{
     width: '60%',
-    height: 200,
+    height: 180,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius:"100%",
-    backgroundColor: '#22876A',
+    backgroundColor: '#16bd44',
+    gap:10
   },
+  detailsContainer:{
+    width: '95%',
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#fff',
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+  },
+  IndividualDetails:{
+    flex: 1,
+    alignItems: 'center',
+    gap: 10,
+    marginVertical: 10
+  }
 })
