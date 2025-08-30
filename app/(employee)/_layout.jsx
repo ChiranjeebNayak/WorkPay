@@ -33,7 +33,7 @@ function CustomTabBar({ state, descriptors, navigation }) {
 
 let iconName;
 switch (route.name.toLowerCase()) {
-  case 'home':
+  case '(home)':
     iconName = 'home-outline';
     break;
   case 'attendance':
@@ -74,7 +74,7 @@ switch (route.name.toLowerCase()) {
 export default function EmployeeLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <CustomTabBar {...props} />}>
-      <Tabs.Screen name="Home" options={{ title: 'Home' }} />
+      <Tabs.Screen name="(home)" options={{ title: 'Home' }} />
       <Tabs.Screen name="Attendance" options={{ title: 'Attendance' }} />
       <Tabs.Screen name="Payment" options={{ title: 'Payment' }} />
       <Tabs.Screen name="Leave" options={{ title: 'Leaves' }} />
