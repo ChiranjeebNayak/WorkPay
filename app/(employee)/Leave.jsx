@@ -12,8 +12,37 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
+
+const holidaysData = [
+  {
+    month: "August 2025",
+    holidays: [
+      { date: "09", name: "Independence Day" },
+      { date: "15", name: "Labor Day" },
+    ],
+  },
+  {
+    month: "September 2025",
+    holidays: [
+      { date: "05", name: "Teacher’s Day" },
+      { date: "10", name: "Ganesh Chaturthi" },
+      { date: "28", name: "Community Festival" },
+    ],
+  },
+  {
+    month: "October 2025",
+    holidays: [
+      { date: "02", name: "Gandhi Jayanti" },
+      { date: "20", name: "Dussehra" },
+      { date: "31", name: "Halloween" },
+    ],
+  },
+];
+
+
 function Leave() {
   const [modalVisible, setModalVisible] = useState(false);
+  const [isLeave, setIsLeave] = useState(true);
   const [leaveHistory, setLeaveHistory] = useState([
     { id: '1', startDate: '2025-01-15', endDate: '2025-01-15', type: 'Paid', status: 'Approved' },
     { id: '2', startDate: '2025-03-22', endDate: '2025-03-23', type: 'Paid', status: 'Approved' },
@@ -84,28 +113,71 @@ function Leave() {
 
         {/* Leave History */}
         <View style={styles.historyContainer}>
-          <Text style={styles.historyTitle}>Leave History</Text>
-          {/* <View style={{flexDirection:'row',justifyContent:'space-between',padding:15,marginBottom:10,backgroundColor:'#1e1e2a',borderRadius:10}}>
-            <Text style={{color:'#fff'}}>Date</Text>
-            <Text style={{color:'#fff'}}>Type</Text>
-            <Text style={{color:'#fff'}}>Status</Text>
-          </View> */}
-          {leaveHistory.map((item)=>(
-            <View key={item.id} style={styles.historyItem}>
-                
-              
-                {item.startDate === item.endDate ? (<Text style={styles.historyDate}>Leave On: {item.startDate}</Text>) : (
-                <View style={{gap:10}}>
-                  <Text style={styles.historyDate}>Leave From: {item.startDate} </Text>
-                  <Text style={styles.historyDate}>Leave To: {item.endDate}</Text>
-                </View>
-                )}
 
-              <Text style={styles.historyDate}>{item.date}</Text>
-              <Text style={styles.historyType}>{item.type}</Text>
-              <Text style={styles.historyStatus}>{item.status}</Text>
+            {/* Toggle */}  
+            <View style={styles.toggleContainer}>
+                  <TouchableOpacity
+                    style={isLeave ? styles.selectedTab : styles.unselectedTab}
+                    onPress={() => setIsLeave(true)}
+                  >
+                    <Text style={styles.toggleText}>Leave History</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={!isLeave ? styles.selectedTab : styles.unselectedTab}
+                    onPress={() => setIsLeave(false)}
+                  >
+                    <Text style={styles.toggleText}>Holidays</Text>
+                  </TouchableOpacity>
+             </View>
+
+          {/* leave container */}
+        {isLeave ? <View style={{width:'100%'}}>
+              {/* <Text style={styles.historyTitle}>Leave History</Text> */}
+                        {/* <View style={{flexDirection:'row',justifyContent:'space-between',padding:15,marginBottom:10,backgroundColor:'#1e1e2a',borderRadius:10}}>
+                          <Text style={{color:'#fff'}}>Date</Text>
+                          <Text style={{color:'#fff'}}>Type</Text>
+                          <Text style={{color:'#fff'}}>Status</Text>
+                        </View> */}
+                        {leaveHistory.map((item)=>(
+                          <View key={item.id} style={styles.historyItem}>
+                              
+                            
+                              {item.startDate === item.endDate ? (<Text style={styles.historyDate}>Leave On: {item.startDate}</Text>) : (
+                              <View style={{gap:10}}>
+                                <Text style={styles.historyDate}>Leave From: {item.startDate} </Text>
+                                <Text style={styles.historyDate}>Leave To: {item.endDate}</Text>
+                              </View>
+                              )}
+
+                            <Text style={styles.historyDate}>{item.date}</Text>
+                            <Text style={styles.historyType}>{item.type}</Text>
+                            <Text style={styles.historyStatus}>{item.status}</Text>
+                          </View>
+                        ))}
+          </View> :
+
+
+          <View style={{width:'100%'}}>
+                      {/* holidays container */}
+            {/* <Text style={styles.historyTitle}>Holidays</Text> */}
+            <View style={{width:'100%',gap:15}}>
+                      {holidaysData.map((monthItem, index) => (
+                          <View key={index} style={styles.holidayMonth}>
+                            <Text style={styles.holidayMonthText}>{monthItem.month}</Text>
+                            <View style={styles.holidayList}>
+                              {monthItem.holidays.map((holiday, idx) => (
+                                <View key={idx} style={styles.holidayItem}>
+                                  <Text style={styles.holidayDate}>{holiday.date}</Text>
+                                  <Text style={styles.holidayName}>{holiday.name}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          </View>
+                       ))}
             </View>
-          ))}
+                        
+          </View>}
+         
         </View>
 
       </ScrollView>
@@ -233,7 +305,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 10
+    marginBottom: 10,
+    textAlign: 'center'
   },
   historyItem: {
     flexDirection: 'row',
@@ -308,5 +381,68 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
+  },
+    toggleContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#222',
+    borderRadius: 10,
+    height: 50,
+    marginBottom: 25,
+    overflow: 'hidden',
+  },
+  selectedTab: {
+    flex: 1,
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  unselectedTab: {
+    flex: 1,
+    backgroundColor: '#222',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  toggleText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  holidayMonth:{
+    gap:10,
+    paddingHorizontal:10,
+  },
+  holidayList: {
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  holidayItem:{
+    width: '48%',
+    padding: 10,
+    backgroundColor: '#2a323d',
+    borderRadius: 8,
+    alignItems: 'center',
+    gap: 5
+  },
+  holidayMonthText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  holidayDate: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 20,
+  },
+  holidayName: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
