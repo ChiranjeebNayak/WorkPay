@@ -93,7 +93,7 @@ function EmployeeLogin() {
               placeholderTextColor="#aaa"
               secureTextEntry
             />
-            <TouchableOpacity style={styles.button}>
+            <TouchableOpacity onPress={() => router.push('/(admin)/EmployeeManagement')} style={styles.button}>
               <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
           </>
@@ -108,7 +108,7 @@ export default EmployeeLogin;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111921',
+    backgroundColor: '#111a22',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,

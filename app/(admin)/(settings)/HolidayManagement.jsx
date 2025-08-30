@@ -1,0 +1,307 @@
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ScrollView,
+  Modal,
+  Platform,
+  TextInput,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import DateTimePicker from "@react-native-community/datetimepicker";
+
+function HolidayManagement() {
+  const currentYear = new Date().getFullYear();
+  const [holidays, setHolidays] = useState([
+    {
+      month: "January " + currentYear,
+      holidays: [{ date: "01", name: "New Year" }],
+    },
+    {
+      month: "August " + currentYear,
+      holidays: [{ date: "15", name: "Independence Day" }],
+    },
+  ]);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [holidayDate, setHolidayDate] = useState(null);
+  const [holidayName, setHolidayName] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Add Holiday
+  const addHoliday = () => {
+    if (!holidayDate || !holidayName.trim()) return;
+
+    const monthName = holidayDate.toLocaleString("default", { month: "long" });
+    const year = holidayDate.getFullYear();
+
+
+    const date = holidayDate.getDate().toString().padStart(2, "0");
+    const newHoliday = { date, name: holidayName };
+
+    // Group holidays by month
+    const monthKey = `${monthName} ${year}`;
+    let updated = [...holidays];
+    const monthIndex = updated.findIndex((m) => m.month === monthKey);
+
+    if (monthIndex >= 0) {
+      updated[monthIndex].holidays.push(newHoliday);
+      updated[monthIndex].holidays.sort((a, b) => a.date - b.date);
+    } else {
+      updated.push({ month: monthKey, holidays: [newHoliday] });
+    }
+
+    // sort months by date
+    updated.sort(
+      (a, b) =>
+        new Date(a.month).getTime() - new Date(b.month).getTime()
+    );
+
+    setHolidays(updated);
+    setHolidayDate(null);
+    setHolidayName("");
+    setModalVisible(false);
+  };
+
+  return (
+    <SafeAreaView style={styles.mainContainer}>
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Header */}
+        <Text style={styles.headerText}>Holiday Management</Text>
+
+        {/* Summary */}
+        <View style={styles.summaryContainer}>
+          <MaterialCommunityIcons
+            name="calendar-star"
+            size={50}
+            color="#1e90ff"
+          />
+          <Text style={styles.summaryHeader}>
+            {holidays.reduce((acc, m) => acc + m.holidays.length, 0)}
+          </Text>
+          <Text style={{ color: "#fff" }}>Total Holidays in {currentYear}</Text>
+        </View>
+
+        {/* Add Holiday Button */}
+        <TouchableOpacity
+          style={styles.applyButton}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={styles.applyButtonText}>Add Holiday</Text>
+        </TouchableOpacity>
+
+        {/* Holiday List */}
+        <View style={styles.historyContainer}>
+          <View style={{ width: "100%", gap: 15 }}>
+            {holidays.map((monthItem, index) => (
+              <View key={index} style={styles.holidayMonth}>
+                <Text style={styles.holidayMonthText}>{monthItem.month}</Text>
+                <View style={styles.holidayList}>
+                  {monthItem.holidays.map((holiday, idx) => (
+                    <View key={idx} style={styles.holidayItem}>
+                      <Text style={styles.holidayDate}>{holiday.date}</Text>
+                      <Text style={styles.holidayName}>{holiday.name}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Add Holiday Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Add Holiday</Text>
+
+            {/* Date Picker */}
+            <TouchableOpacity
+              style={styles.input}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={{ color: holidayDate ? "#fff" : "#888" }}>
+                {holidayDate
+                  ? holidayDate.toISOString().slice(0, 10)
+                  : "Select Date"}
+              </Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={holidayDate || new Date()}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(false);
+                  if (selectedDate) setHolidayDate(selectedDate);
+                }}
+                minimumDate={new Date(currentYear, 0, 1)}
+                maximumDate={new Date(currentYear, 11, 31)}
+              />
+            )}
+
+            {/* Holiday Name */}
+                <TextInput
+                style={styles.input}
+                placeholder="Enter Holiday Name"
+                placeholderTextColor="#888"
+                value={holidayName}
+                onChangeText={setHolidayName}
+                />
+
+
+            {/* Buttons */}
+            <TouchableOpacity style={styles.modalButton} onPress={addHoliday}>
+              <Text style={styles.modalButtonText}>Submit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.modalButton,
+                { backgroundColor: "#ff4d6d", marginTop: 10 },
+              ]}
+              onPress={() => {
+                setHolidayDate(null);
+                setHolidayName("");
+                setModalVisible(false);
+              }}
+            >
+              <Text style={styles.modalButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+export default HolidayManagement;
+
+const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: "#111a22",
+  },
+  container: {
+    padding: 20,
+    alignItems: "center",
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 20,
+  },
+  summaryContainer: {
+    width: "95%",
+    padding: 20,
+    backgroundColor: "#1e262f",
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 20,
+    gap: 10,
+  },
+  summaryHeader: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  applyButton: {
+    width: "95%",
+    padding: 15,
+    backgroundColor: "#1e90ff",
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  applyButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  historyContainer: {
+    width: "95%",
+  },
+  holidayMonth: {
+    gap: 10,
+    paddingHorizontal: 10,
+  },
+  holidayList: {
+    width: "100%",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  holidayItem: {
+    width: "48%",
+    padding: 10,
+    backgroundColor: "#2a323d",
+    borderRadius: 8,
+    alignItems: "center",
+    gap: 5,
+  },
+  holidayMonthText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 18,
+    textAlign: "center",
+  },
+  holidayDate: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 20,
+  },
+  holidayName: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: "85%",
+    padding: 20,
+    backgroundColor: "#1e262f",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 20,
+  },
+  input: {
+    width: "100%",
+    padding: 15,
+    backgroundColor: "#111a22",
+    color: "#fff",
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  modalButton: {
+    width: "100%",
+    padding: 15,
+    backgroundColor: "#1e90ff",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+});
