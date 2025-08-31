@@ -60,7 +60,7 @@ function Home() {
                 style={styles.menuItem}
                 onPress={() => {
                   setShowMenu(false);
-                  router.push('/EmployeeLogin');
+                  router.replace('/EmployeeLogin');
                 }}
               >
                 <Feather name="log-out" size={18} color="#F04438" />

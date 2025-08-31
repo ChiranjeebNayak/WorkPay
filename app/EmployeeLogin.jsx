@@ -67,7 +67,7 @@ function EmployeeLogin() {
               secureTextEntry
             />
             <TouchableOpacity
-              onPress={() => router.push('/(employee)/Home')}
+              onPress={() => router.push('/(employee)/(home)/Home')}
               style={styles.button}
             >
               <Text style={styles.buttonText}>Login</Text>
@@ -93,7 +93,7 @@ function EmployeeLogin() {
               placeholderTextColor="#aaa"
               secureTextEntry
             />
-            <TouchableOpacity onPress={() => router.push('/(admin)/EmployeeManagement')} style={styles.button}>
+            <TouchableOpacity onPress={() => router.push('/(admin)')} style={styles.button}>
               <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
           </>
