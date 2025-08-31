@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import Feather from "@expo/vector-icons/Feather";
+import { useRouter } from "expo-router";
 
 function HolidayManagement() {
   const currentYear = new Date().getFullYear();
@@ -30,6 +32,7 @@ function HolidayManagement() {
   const [holidayDate, setHolidayDate] = useState(null);
   const [holidayName, setHolidayName] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const router = useRouter();
 
   // Add Holiday
   const addHoliday = () => {
@@ -70,7 +73,17 @@ function HolidayManagement() {
     <SafeAreaView style={styles.mainContainer}>
       <ScrollView contentContainerStyle={styles.container}>
         {/* Header */}
-        <Text style={styles.headerText}>Holiday Management</Text>
+        <View style={{width: "100%", alignItems: "center", flexDirection: "row",justifyContent: "space-between",marginBottom: 20}}>
+            <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Feather name="arrow-left" size={24} color="white" />
+        </TouchableOpacity>
+                 <Text style={styles.headerText}>Holiday Management</Text>
+                <View/>
+        </View>
+       
 
         {/* Summary */}
         <View style={styles.summaryContainer}>
@@ -198,7 +211,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#fff",
-    marginBottom: 20,
   },
   summaryContainer: {
     width: "95%",
