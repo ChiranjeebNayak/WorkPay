@@ -34,7 +34,10 @@ function CustomTabBar({ state, descriptors, navigation }) {
 
         let iconName;
         switch (route.name) {
-          case 'index':
+          case 'Dashboard':
+            iconName = 'home-outline';
+            break;
+          case 'EmployeeManagement':
             iconName = 'people-outline';
             break;
           case 'SalaryManagement':
@@ -73,9 +76,10 @@ function CustomTabBar({ state, descriptors, navigation }) {
 function AdminLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <CustomTabBar {...props} />}>
-      <Tabs.Screen name="index"  options={{ title: 'Employee Management' }} />
+      <Tabs.Screen name="Dashboard"  options={{ title: 'Dashboard' }} />
+      <Tabs.Screen name="EmployeeManagement" options={{ title: 'Employee Management' }} />
       <Tabs.Screen name="SalaryManagement" options={{ title: 'Salary Management' }} />
-      <Tabs.Screen name="(settings)" options={{ title: 'Office Settings' }} />
+      <Tabs.Screen name="(settings)" options={{ title: 'Settings' }} />
     </Tabs>
   );
 }

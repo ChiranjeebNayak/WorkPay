@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 
-function EmployeeLogin() {
+function index() {
   const [isEmployee, setIsEmployee] = useState(true);
   const [employeeLogin, setEmployeeLogin] = useState({ phone: '', password: '' });
   const [adminLogin, setAdminLogin] = useState({ email: '', password: '' });
@@ -93,7 +93,7 @@ function EmployeeLogin() {
               placeholderTextColor="#aaa"
               secureTextEntry
             />
-            <TouchableOpacity onPress={() => router.push('/(admin)')} style={styles.button}>
+            <TouchableOpacity onPress={() => router.push('/(admin)/Dashboard')} style={styles.button}>
               <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
           </>
@@ -103,7 +103,7 @@ function EmployeeLogin() {
   );
 }
 
-export default EmployeeLogin;
+export default index;
 
 const styles = StyleSheet.create({
   container: {
