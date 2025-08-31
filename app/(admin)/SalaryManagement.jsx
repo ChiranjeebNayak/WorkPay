@@ -1,5 +1,3 @@
-// SalaryManagement
-
 import React, { useState, useEffect } from 'react'
 import { 
   StyleSheet, 
@@ -18,7 +16,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import Feather from '@expo/vector-icons/Feather'
 import { useRouter } from 'expo-router'
 
-function SalaryManagement() {
+function AdminSalaryManagement() {
   const router = useRouter()
   const today = new Date()
   const currentMonth = today.getMonth() + 1
@@ -32,42 +30,48 @@ function SalaryManagement() {
   const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [advanceAmount, setAdvanceAmount] = useState('')
   const [processingAdvance, setProcessingAdvance] = useState(false)
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth)
+  const [selectedYear, setSelectedYear] = useState(currentYear)
 
   // Sample data - replace with API calls
   useEffect(() => {
     loadSalaryData()
-  }, [])
+  }, [selectedMonth, selectedYear])
 
   const loadSalaryData = async () => {
-    // Replace with actual API call to /api/salary/current-month
+    setLoading(true)
+    // Replace with actual API call to /api/salary/:year/:month
     setTimeout(() => {
+      // Generate sample data based on selected month/year
+      const isPastMonth = selectedYear < currentYear || (selectedYear === currentYear && selectedMonth < currentMonth)
+      
       const sampleEmployees = [
         {
           id: '1',
           name: 'John Smith',
           phone: '+91 9876543210',
           baseSalary: 35000,
-          overtimeHours: 12,
+          overtimeHours: selectedMonth === currentMonth ? 12 : 15,
           overtimeRate: 250,
-          overtimePay: 3000,
-          advancePayment: 5000,
-          deductions: 800, // From unpaid leaves
-          finalSalary: 32200,
-          status: 'Pending',
-          unpaidLeaveDays: 2
+          overtimePay: selectedMonth === currentMonth ? 3000 : 3750,
+          advancePayment: selectedMonth === currentMonth ? 5000 : 2000,
+          deductions: selectedMonth === currentMonth ? 800 : 1200,
+          finalSalary: selectedMonth === currentMonth ? 32200 : 35550,
+          status: isPastMonth ? (selectedMonth <= 6 ? 'Due' : 'Paid') : 'Pending',
+          unpaidLeaveDays: selectedMonth === currentMonth ? 2 : 3
         },
         {
           id: '2',
           name: 'Sarah Johnson',
           phone: '+91 9876543211',
           baseSalary: 30000,
-          overtimeHours: 8,
+          overtimeHours: selectedMonth === currentMonth ? 8 : 10,
           overtimeRate: 200,
-          overtimePay: 1600,
-          advancePayment: 2000,
+          overtimePay: selectedMonth === currentMonth ? 1600 : 2000,
+          advancePayment: selectedMonth === currentMonth ? 2000 : 1500,
           deductions: 0,
-          finalSalary: 29600,
-          status: 'Paid',
+          finalSalary: selectedMonth === currentMonth ? 29600 : 30500,
+          status: isPastMonth ? 'Paid' : 'Paid',
           unpaidLeaveDays: 0
         },
         {
@@ -75,28 +79,28 @@ function SalaryManagement() {
           name: 'Mike Wilson',
           phone: '+91 9876543212',
           baseSalary: 40000,
-          overtimeHours: 15,
+          overtimeHours: selectedMonth === currentMonth ? 15 : 18,
           overtimeRate: 300,
-          overtimePay: 4500,
-          advancePayment: 8000,
-          deductions: 1200,
-          finalSalary: 35300,
-          status: 'Due',
-          unpaidLeaveDays: 3
+          overtimePay: selectedMonth === currentMonth ? 4500 : 5400,
+          advancePayment: selectedMonth === currentMonth ? 8000 : 6000,
+          deductions: selectedMonth === currentMonth ? 1200 : 800,
+          finalSalary: selectedMonth === currentMonth ? 35300 : 38600,
+          status: isPastMonth ? (selectedMonth <= 5 ? 'Due' : 'Paid') : 'Pending',
+          unpaidLeaveDays: selectedMonth === currentMonth ? 3 : 2
         },
         {
           id: '4',
           name: 'Emily Davis',
           phone: '+91 9876543213',
           baseSalary: 32000,
-          overtimeHours: 6,
+          overtimeHours: selectedMonth === currentMonth ? 6 : 8,
           overtimeRate: 220,
-          overtimePay: 1320,
-          advancePayment: 1500,
-          deductions: 400,
-          finalSalary: 31420,
-          status: 'Pending',
-          unpaidLeaveDays: 1
+          overtimePay: selectedMonth === currentMonth ? 1320 : 1760,
+          advancePayment: selectedMonth === currentMonth ? 1500 : 1000,
+          deductions: selectedMonth === currentMonth ? 400 : 600,
+          finalSalary: selectedMonth === currentMonth ? 31420 : 32160,
+          status: isPastMonth ? 'Paid' : 'Pending',
+          unpaidLeaveDays: selectedMonth === currentMonth ? 1 : 1.5
         }
       ]
       setEmployees(sampleEmployees)
@@ -122,17 +126,41 @@ function SalaryManagement() {
     }
   }
 
+  // Month navigation functions
+  const handlePrevMonth = () => {
+    if (selectedMonth === 1) {
+      setSelectedMonth(12)
+      setSelectedYear(selectedYear - 1)
+    } else {
+      setSelectedMonth(selectedMonth - 1)
+    }
+  }
+
+  const handleNextMonth = () => {
+    if (selectedMonth === 12) {
+      setSelectedMonth(1)
+      setSelectedYear(selectedYear + 1)
+    } else {
+      setSelectedMonth(selectedMonth + 1)
+    }
+  }
+
+  const isNextDisabled = selectedMonth === currentMonth && selectedYear === currentYear
+
   const handleSettleSalary = async (employeeId) => {
+    const employee = employees.find(emp => emp.id === employeeId)
+    const monthName = getSelectedMonthName()
+    
     Alert.alert(
       'Settle Salary',
-      'Are you sure you want to settle this employee\'s salary?',
+      `Are you sure you want to settle ${employee.name}'s salary for ${monthName} ${selectedYear}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Settle',
           onPress: async () => {
             try {
-              // Replace with actual API call to /api/salary/settle/:employeeId
+              // Replace with actual API call to /api/salary/settle/:employeeId/:year/:month
               setEmployees(prev => 
                 prev.map(emp => 
                   emp.id === employeeId 
@@ -140,7 +168,7 @@ function SalaryManagement() {
                     : emp
                 )
               )
-              Alert.alert('Success', 'Salary settled successfully!')
+              Alert.alert('Success', `${employee.name}'s salary for ${monthName} ${selectedYear} settled successfully!`)
             } catch (error) {
               Alert.alert('Error', 'Failed to settle salary. Please try again.')
             }
@@ -270,7 +298,8 @@ function SalaryManagement() {
 
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
-        {item.status === 'Pending' && isEndOfMonth && (
+        {/* Current Month - Settle Salary */}
+        {item.status !== 'Paid' && isCurrentMonth() && (
           <TouchableOpacity
             style={styles.settleButton}
             onPress={() => handleSettleSalary(item.id)}
@@ -280,7 +309,19 @@ function SalaryManagement() {
           </TouchableOpacity>
         )}
         
-        {item.status !== 'Paid' && (
+        {/* Past Months - Settle Overdue */}
+        {item.status !== 'Paid' && !isCurrentMonth() && (
+          <TouchableOpacity
+            style={styles.settleButton}
+            onPress={() => handleSettleSalary(item.id)}
+          >
+            <MaterialCommunityIcons name="alert-circle" size={16} color="#fff" />
+            <Text style={styles.settleButtonText}>Settle Overdue</Text>
+          </TouchableOpacity>
+        )}
+        
+        {/* Advance Payment - Only for Current Month */}
+        {item.status !== 'Paid' && isCurrentMonth() && (
           <TouchableOpacity
             style={styles.advanceButton}
             onPress={() => handleAdvancePayment(item)}
@@ -290,6 +331,7 @@ function SalaryManagement() {
           </TouchableOpacity>
         )}
         
+        {/* Paid Status Indicator */}
         {item.status === 'Paid' && (
           <View style={styles.paidIndicator}>
             <MaterialCommunityIcons name="check-circle" size={16} color="#7ED321" />
@@ -306,6 +348,22 @@ function SalaryManagement() {
       'July', 'August', 'September', 'October', 'November', 'December'
     ]
     return months[currentMonth - 1]
+  }
+
+  const getSelectedMonthName = () => {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ]
+    return months[selectedMonth - 1]
+  }
+
+  const isPastMonth = () => {
+    return selectedYear < currentYear || (selectedYear === currentYear && selectedMonth < currentMonth)
+  }
+
+  const isCurrentMonth = () => {
+    return selectedYear === currentYear && selectedMonth === currentMonth
   }
 
   if (loading) {
@@ -331,10 +389,29 @@ function SalaryManagement() {
 
       {/* Month Overview */}
       <View style={styles.monthOverview}>
-        <View style={styles.monthInfo}>
-          <Text style={styles.monthTitle}>{getCurrentMonthName()} {currentYear}</Text>
-          <Text style={styles.monthSubtitle}>Salary Management Overview</Text>
+        <View style={styles.monthNavigation}>
+          <TouchableOpacity onPress={handlePrevMonth} style={styles.navButton}>
+            <Feather name="chevron-left" size={24} color="white" />
+          </TouchableOpacity>
+
+          <View style={styles.monthInfo}>
+            <Text style={styles.monthTitle}>{getSelectedMonthName()} {selectedYear}</Text>
+            <Text style={styles.monthSubtitle}>
+              {isCurrentMonth() ? 'Current Month Salary Overview' : 
+               isPastMonth() ? 'Past Month Salary Overview' : 
+               'Future Month Salary Overview'}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={handleNextMonth}
+            disabled={isNextDisabled}
+            style={[styles.navButton, isNextDisabled && { opacity: 0.4 }]}
+          >
+            <Feather name="chevron-right" size={24} color="white" />
+          </TouchableOpacity>
         </View>
+
         <View style={styles.monthStats}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{employees.length}</Text>
@@ -359,6 +436,16 @@ function SalaryManagement() {
             <Text style={styles.statLabel}>Due</Text>
           </View>
         </View>
+
+        {/* Alert for overdue salaries */}
+        {employees.some(e => e.status === 'Due') && (
+          <View style={styles.overdueAlert}>
+            <MaterialCommunityIcons name="alert-circle" size={20} color="#D0021B" />
+            <Text style={styles.overdueAlertText}>
+              {employees.filter(e => e.status === 'Due').length} employee(s) have overdue salary payments
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Employee List */}
@@ -463,7 +550,7 @@ function SalaryManagement() {
   )
 }
 
-export default SalaryManagement
+export default AdminSalaryManagement
 
 const styles = StyleSheet.create({
   container: {
@@ -817,5 +904,52 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.6,
+  },
+
+  // Month Navigation
+  monthNavigation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  navButton: {
+    padding: 8,
+  },
+
+  // Overdue Alert
+  overdueAlert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D0021B20',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#D0021B40',
+  },
+  overdueAlertText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#D0021B',
+    fontWeight: '500',
+  },
+
+  // Details Button
+  detailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2A3441',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    gap: 4,
+  },
+  detailsButtonText: {
+    color: '#8A9BAE',
+    fontSize: 12,
+    fontWeight: '500',
   },
 })
