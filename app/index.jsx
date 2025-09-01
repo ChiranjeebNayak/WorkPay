@@ -165,7 +165,7 @@ function index() {
               </View>
 
               <TouchableOpacity 
-                onPress={() => router.push('/(admin)/Dashboard')} 
+                onPress={() => router.push('/(admin)/(dashboard)/Dashboard')} 
                 style={styles.loginButton}
               >
                 <MaterialCommunityIcons name="shield-check" size={20} color="#fff" />

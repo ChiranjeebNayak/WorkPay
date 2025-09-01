@@ -18,6 +18,22 @@ function Dashboard() {
     { icon: 'timer-outline', iconSet: 'Ionicons', color: '#FFB800', count: '11', label: 'Late Arrivals' },
   ];
 
+  // Sample absent employees data
+  const absentEmployees = [
+    { name: 'User D', reason: 'Sick Leave', date: 'Today' },
+    { name: 'User E', reason: 'Personal Leave', date: 'Today' },
+    { name: 'User F', reason: 'Medical Leave', date: 'Today' },
+    { name: 'User G', reason: 'Emergency Leave', date: 'Today' },
+  ];
+
+  // Sample leave requests data
+  const leaveRequests = [
+    { name: 'John Smith', leaveType: 'Annual Leave', dates: '5-8 Sep 2025', status: 'pending' },
+    { name: 'Sarah Johnson', leaveType: 'Sick Leave', dates: '3-4 Sep 2025', status: 'pending' },
+    { name: 'Mike Wilson', leaveType: 'Personal Leave', dates: '10-12 Sep 2025', status: 'pending' },
+    { name: 'Emma Davis', leaveType: 'Maternity Leave', dates: '15 Sep - 15 Dec 2025', status: 'pending' },
+  ];
+
   const renderIcon = (iconName, iconSet, color, size = 28) => {
     switch(iconSet) {
       case 'AntDesign':
@@ -65,49 +81,51 @@ function Dashboard() {
           </View>
         </View>
 
-        {/* recent activity */}
+        {/* Absent List */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          {/* Add recent activity content here */}
+          <Text style={styles.sectionTitle}>Absent Today</Text>
           <View style={styles.recentActivityContainer}>
-                   <View style={styles.recentActivityItem}>
-                                <View style={{gap:5}}>
-                                    <Text style={{color:'#FFFFFF',fontSize:18}}>User A</Text>
-                                    <Text style={{color:'#8A9BAE',fontSize:14}}>Checked in at 9:00 AM</Text>
-                                </View>
-                                <View style={{paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:'#1b947cff',alignItems:'center',justifyContent:'center'}}>
-                                    <Text style={{color:'#ffffff',fontSize:14,fontWeight:'600'}}>Present</Text>
-                                </View>
-                   </View>
-                    <View style={styles.recentActivityItem}>
-                                <View style={{gap:5}}>
-                                    <Text style={{color:'#FFFFFF',fontSize:18}}>User B</Text>
-                                    <Text style={{color:'#8A9BAE',fontSize:14}}>Checked in at 9:10 AM</Text>
-                                </View>
-                                <View style={{paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:'#e68211ff',alignItems:'center',justifyContent:'center'}}>
-                                    <Text style={{color:'#ffffff',fontSize:14,fontWeight:'600'}}>Late</Text>
-                                </View>
-                   </View>
-                   <View style={styles.recentActivityItem}>
-                                <View style={{gap:5}}>
-                                    <Text style={{color:'#FFFFFF',fontSize:18}}>User C</Text>
-                                    <Text style={{color:'#8A9BAE',fontSize:14}}>Checked in at 9:15 AM</Text>
-                                </View>
-                                <View style={{paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:'#1b947cff',alignItems:'center',justifyContent:'center'}}>
-                                    <Text style={{color:'#ffffff',fontSize:14,fontWeight:'600'}}>Present</Text>
-                                </View>
-                   </View>
-                   <View style={styles.recentActivityItem}>
-                                <View style={{gap:5}}>
-                                    <Text style={{color:'#FFFFFF',fontSize:18}}>User D</Text>
-                                    <Text style={{color:'#8A9BAE',fontSize:14}}>- - | - -</Text>
-                                </View>
-                                <View style={{paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:'#a51212ff',alignItems:'center',justifyContent:'center'}}>
-                                    <Text style={{color:'#ffffff',fontSize:14,fontWeight:'600'}}>Absent</Text>
-                                </View>
-                   </View>
+            {absentEmployees.map((employee, index) => (
+              <View key={index} style={styles.recentActivityItem}>
+                <View style={{gap:5}}>
+                  <Text style={{color:'#FFFFFF',fontSize:18}}>{employee.name}</Text>
+                  <Text style={{color:'#8A9BAE',fontSize:14}}>{employee.reason}</Text>
+                </View>
+                <View style={{paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:'#a51212ff',alignItems:'center',justifyContent:'center'}}>
+                  <Text style={{color:'#ffffff',fontSize:14,fontWeight:'600'}}>Absent</Text>
+                </View>
+              </View>
+            ))}
           </View>
         </View>
+
+        {/* Leave Requests Section */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Leave Requests</Text>
+            <TouchableOpacity 
+              onPress={() => router.push('/LeaveRequests')} 
+              style={styles.viewAllButton}
+            >
+              <Text style={styles.viewAllText}>View All</Text>
+              <AntDesign name="right" size={16} color="#4A9EFF" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.recentActivityContainer}>
+            {leaveRequests.slice(0, 3).map((request, index) => (
+              <View key={index} style={styles.recentActivityItem}>
+                <View style={{gap:5, flex: 1}}>
+                  <Text style={{color:'#FFFFFF',fontSize:18}}>{request.name}</Text>
+                  <Text style={{color:'#8A9BAE',fontSize:14}}>{request.leaveType} • {request.dates}</Text>
+                </View>
+                <View style={{paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:'#FFB800',alignItems:'center',justifyContent:'center'}}>
+                  <Text style={{color:'#ffffff',fontSize:14,fontWeight:'600'}}>Pending</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
         </ScrollView>
     </SafeAreaView>
   )
@@ -142,11 +160,31 @@ const styles = StyleSheet.create({
   sectionContainer: {
     padding: 20,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 16,
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#2A3441',
+  },
+  viewAllText: {
+    color: '#4A9EFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   overview: {
     flexDirection: 'row',
