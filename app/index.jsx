@@ -174,7 +174,12 @@ function index() {
             </>
           )}
 
-          <TouchableOpacity style={styles.forgotPassword}>
+          <TouchableOpacity 
+                onPress={() => router.push({ 
+                pathname: '/ForgotPassword', 
+                params: { isEmployee: isEmployee } 
+              })}
+ style={styles.forgotPassword}>
             <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
           </TouchableOpacity>
         </View>
