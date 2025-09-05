@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View, 
-  ScrollView, 
-  Modal, 
-  Platform 
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-
+import { useState } from 'react';
+import {
+  Alert,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const holidaysData = [
   {
@@ -39,45 +40,53 @@ const holidaysData = [
   },
 ];
 
-
 function Leave() {
   const [modalVisible, setModalVisible] = useState(false);
   const [isLeave, setIsLeave] = useState(true);
   const [leaveHistory, setLeaveHistory] = useState([
-    { id: '1', startDate: '2025-01-15', endDate: '2025-01-15', type: 'Paid', status: 'Approved' },
-    { id: '2', startDate: '2025-03-22', endDate: '2025-03-23', type: 'Paid', status: 'Approved' },
-    { id: '3', startDate: '2025-06-10', endDate: '2025-06-11', type: 'Unpaid', status: 'Pending' },
-    { id: '4', startDate: '2025-07-05', endDate: '2025-07-06', type: 'Paid', status: 'Rejected' },
-    { id: '5', startDate: '2025-08-18', endDate: '2025-08-19', type: 'Paid', status: 'Approved' },
-    { id: '6', startDate: '2025-09-10', endDate: '2025-09-11', type: 'Unpaid', status: 'Pending' },
-    { id: '7', startDate: '2025-10-12', endDate: '2025-10-13', type: 'Paid', status: 'Approved' },
-    { id: '8', startDate: '2025-11-15', endDate: '2025-11-15', type: 'Unpaid', status: 'Pending' },
+    { id: '1', startDate: '2025-01-15', endDate: '2025-01-15', type: 'Paid', status: 'Approved', description: 'Personal work' },
+    { id: '2', startDate: '2025-03-22', endDate: '2025-03-23', type: 'Paid', status: 'Approved', description: 'Family emergency' },
+    { id: '3', startDate: '2025-06-10', endDate: '2025-06-11', type: 'Unpaid', status: 'Pending', description: 'Medical appointment' },
+    { id: '4', startDate: '2025-07-05', endDate: '2025-07-06', type: 'Paid', status: 'Rejected', description: 'Vacation' },
+    { id: '5', startDate: '2025-08-18', endDate: '2025-08-19', type: 'Paid', status: 'Approved', description: 'Wedding ceremony' },
+    { id: '6', startDate: '2025-09-10', endDate: '2025-09-11', type: 'Unpaid', status: 'Pending', description: 'Personal matter' },
+    { id: '7', startDate: '2025-10-12', endDate: '2025-10-13', type: 'Paid', status: 'Approved', description: 'Home renovation' },
+    { id: '8', startDate: '2025-11-15', endDate: '2025-11-15', type: 'Unpaid', status: 'Pending', description: 'Health checkup' },
   ]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [description, setDescription] = useState('');
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
   const applyLeave = () => {
-    if (!startDate || !endDate) return;
+    if (!startDate || !endDate || !description.trim()) {
+      Alert.alert('Missing Information', 'Please fill in all fields');
+      return;
+    }
+    
     const newLeave = {
       id: Math.random().toString(),
       startDate: startDate,
       endDate: endDate,
       type: leaveHistory.length >= 10 ? 'Unpaid' : 'Paid',
-      status: 'Pending'
+      status: 'Pending',
+      description: description.trim()
     };
+    
     setLeaveHistory([newLeave, ...leaveHistory]);
     setStartDate('');
     setEndDate('');
+    setDescription('');
     setModalVisible(false);
+    Alert.alert('Success', 'Leave application submitted successfully');
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Approved': return '#4CAF50';
+      case 'Approved': return '#00E676';
       case 'Pending': return '#FF9800';
-      case 'Rejected': return '#F44336';
+      case 'Rejected': return '#FF5252';
       default: return '#888';
     }
   };
@@ -95,152 +104,169 @@ function Leave() {
     return type === 'Paid' ? '#1e90ff' : '#ff6b35';
   };
 
+  const calculateDays = (start, end) => {
+    const startDateObj = new Date(start);
+    const endDateObj = new Date(end);
+    const diffTime = Math.abs(endDateObj - startDateObj);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  };
+
   return (
     <SafeAreaView style={styles.mainContainer}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
-        <Text style={styles.headerText}>Leave Management</Text>
+        {/* Enhanced Header */}
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerText}>Leave Management</Text>
+          <Text style={styles.headerSubtext}>Manage your time off efficiently</Text>
+        </View>
 
-        {/* Leaves Summary */}
+        {/* Enhanced Leaves Summary */}
         <View style={styles.summaryContainer}>
-          <MaterialCommunityIcons name="calendar-check" size={50} color="#1e90ff" />
-          {/* summary details */}
-          <View style={styles.summaryDetails}>
-            <View style={{alignItems:'center',gap:10}}>
-              <Text style={styles.summaryHeader}>10</Text>
-              <Text style={{color: '#fff'}}>Total Leaves</Text>
-            </View>
-            <View style={{alignItems:'center',gap:10}}>
-              <Text style={styles.summaryHeader}>5</Text>
-              <Text style={{color: '#fff'}}>Used</Text>
-            </View>
-            <View style={{alignItems:'center',gap:10}}>
-              <Text style={styles.summaryHeader}>5</Text>
-              <Text style={{color: '#fff'}}>Remaining</Text>
-            </View>
+          <View style={styles.summaryIconContainer}>
+            <MaterialCommunityIcons name="calendar-check" size={32} color="#1e90ff" />
           </View>
-          <View style={{width:'100%',height:10,borderRadius:10,backgroundColor:'#fff',overflow:'hidden'}}>
-            <View style={{width:'100%',height:'100%',backgroundColor:'#1e90ff',borderRadius:10,transform:[{translateX:`${((5/10)*100)-100}%`}]}}></View>
+          <View style={styles.summaryContent}>
+            <View style={styles.summaryStats}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>10</Text>
+                <Text style={styles.statLabel}>Total</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>5</Text>
+                <Text style={styles.statLabel}>Used</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>5</Text>
+                <Text style={styles.statLabel}>Available</Text>
+              </View>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View style={styles.progressBarBg}>
+                <View style={[styles.progressBarFill, { width: '50%' }]} />
+              </View>
+              <Text style={styles.progressText}>50% used</Text>
+            </View>
           </View>
         </View>
 
-        {/* Apply Leave Button */}
+        {/* Enhanced Apply Leave Button */}
         <TouchableOpacity 
           style={styles.applyButton} 
           onPress={() => setModalVisible(true)}
+          activeOpacity={0.8}
         >
-          <Text style={styles.applyButtonText}>Apply Leave</Text>
+          <MaterialCommunityIcons name="plus-circle-outline" size={20} color="#fff" />
+          <Text style={styles.applyButtonText}>Apply for Leave</Text>
         </TouchableOpacity>
 
-        {/* Leave History */}
-        <View style={styles.historyContainer}>
+        {/* Enhanced Toggle and Content */}
+        <View style={styles.contentContainer}>
+          <View style={styles.toggleContainer}>
+            <TouchableOpacity
+              style={isLeave ? styles.selectedTab : styles.unselectedTab}
+              onPress={() => setIsLeave(true)}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons 
+                name="history" 
+                size={18} 
+                color={isLeave ? '#ffffff' : '#8a9ba8'} 
+              />
+              <Text style={[styles.toggleText, { color: isLeave ? '#ffffff' : '#8a9ba8' }]}>
+                Leave History
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={!isLeave ? styles.selectedTab : styles.unselectedTab}
+              onPress={() => setIsLeave(false)}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons 
+                name="calendar-star" 
+                size={18} 
+                color={!isLeave ? '#ffffff' : '#8a9ba8'} 
+              />
+              <Text style={[styles.toggleText, { color: !isLeave ? '#ffffff' : '#8a9ba8' }]}>
+                Holidays
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-            {/* Toggle */}  
-            <View style={styles.toggleContainer}>
-                  <TouchableOpacity
-                    style={isLeave ? styles.selectedTab : styles.unselectedTab}
-                    onPress={() => setIsLeave(true)}
-                  >
-                    <MaterialCommunityIcons 
-                      name="calendar-clock" 
-                      size={20} 
-                      color={isLeave ? '#ffffff' : '#ccc'} 
-                    />
-                    <Text style={[styles.toggleText, { color: isLeave ? '#ffffff' : '#ccc' }]}>
-                      Leave History
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={!isLeave ? styles.selectedTab : styles.unselectedTab}
-                    onPress={() => setIsLeave(false)}
-                  >
-                    <MaterialCommunityIcons 
-                      name="calendar-star" 
-                      size={20} 
-                      color={!isLeave ? '#ffffff' : '#ccc'} 
-                    />
-                    <Text style={[styles.toggleText, { color: !isLeave ? '#ffffff' : '#ccc' }]}>
-                      Holidays
-                    </Text>
-                  </TouchableOpacity>
-             </View>
-
-          {/* leave container */}
-        {isLeave ? <View style={{width:'100%'}}>
-              {/* <Text style={styles.historyTitle}>Leave History</Text> */}
-                        {/* <View style={{flexDirection:'row',justifyContent:'space-between',padding:15,marginBottom:10,backgroundColor:'#1e1e2a',borderRadius:10}}>
-                          <Text style={{color:'#fff'}}>Date</Text>
-                          <Text style={{color:'#fff'}}>Type</Text>
-                          <Text style={{color:'#fff'}}>Status</Text>
-                        </View> */}
-                        {leaveHistory.map((item)=>(
-                          <View key={item.id} style={styles.historyItem}>
-                            <View style={styles.leaveLeftSection}>
-                              <MaterialCommunityIcons 
-                                name="calendar-outline" 
-                                size={24} 
-                                color="#1e90ff" 
-                                style={styles.leaveIcon}
-                              />
-                              <View style={styles.leaveDateContainer}>
-                                {item.startDate === item.endDate ? (
-                                  <Text style={styles.historyDate}>Leave On: {item.startDate}</Text>
-                                ) : (
-                                  <View style={{gap:4}}>
-                                    <Text style={styles.historyDate}>From: {item.startDate}</Text>
-                                    <Text style={styles.historyDate}>To: {item.endDate}</Text>
-                                  </View>
-                                )}
-                              </View>
-                            </View>
-                            
-                            <View style={styles.leaveRightSection}>
-                              <View style={[styles.leaveTypeBadge, { backgroundColor: getTypeColor(item.type) }]}>
-                                <Text style={styles.leaveTypeText}>{item.type}</Text>
-                              </View>
-                              <View style={styles.leaveStatusContainer}>
-                                <MaterialCommunityIcons 
-                                  name={getStatusIcon(item.status)} 
-                                  size={18} 
-                                  color={getStatusColor(item.status)} 
-                                />
-                                <Text style={[styles.historyStatus, { color: getStatusColor(item.status) }]}>
-                                  {item.status}
-                                </Text>
-                              </View>
-                            </View>
-                          </View>
-                        ))}
-          </View> :
-
-
-          <View style={{width:'100%'}}>
-                      {/* holidays container */}
-            {/* <Text style={styles.historyTitle}>Holidays</Text> */}
-            <View style={{width:'100%',gap:15}}>
-                      {holidaysData.map((monthItem, index) => (
-                          <View key={index} style={styles.holidayMonth}>
-                            <Text style={styles.holidayMonthText}>{monthItem.month}</Text>
-                            <View style={styles.holidayList}>
-                              {monthItem.holidays.map((holiday, idx) => (
-                                <View key={idx} style={styles.holidayItem}>
-                                  <Text style={styles.holidayDate}>{holiday.date}</Text>
-                                  <Text style={styles.holidayName}>{holiday.name}</Text>
-                                </View>
-                              ))}
-                            </View>
-                          </View>
-                       ))}
+          {isLeave ? (
+            <View style={styles.historyContainer}>
+              {leaveHistory.map((item) => (
+                <View key={item.id} style={styles.leaveCard}>
+                  <View style={styles.leaveCardHeader}>
+                    <View style={styles.leaveCardLeft}>
+                      <MaterialCommunityIcons 
+                        name="calendar-outline" 
+                        size={20} 
+                        color="#1e90ff" 
+                      />
+                      <View>
+                        {item.startDate === item.endDate ? (
+                          <Text style={styles.leaveDateText}>{item.startDate}</Text>
+                        ) : (
+                          <Text style={styles.leaveDateText}>
+                            {item.startDate} - {item.endDate}
+                          </Text>
+                        )}
+                        <Text style={styles.leaveDaysText}>
+                          {calculateDays(item.startDate, item.endDate)} day(s)
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.leaveCardRight}>
+                      <View style={[styles.leaveTypeBadge, { backgroundColor: getTypeColor(item.type) }]}>
+                        <Text style={styles.leaveTypeText}>{item.type}</Text>
+                      </View>
+                    </View>
+                  </View>
+                  
+                  <Text style={styles.leaveDescription}>{item.description}</Text>
+                  
+                  <View style={styles.leaveCardFooter}>
+                    <View style={styles.statusContainer}>
+                      <MaterialCommunityIcons 
+                        name={getStatusIcon(item.status)} 
+                        size={16} 
+                        color={getStatusColor(item.status)} 
+                      />
+                      <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+                        {item.status}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
             </View>
-                        
-          </View>}
-         
+          ) : (
+            <View style={styles.holidaysContainer}>
+              {holidaysData.map((monthItem, index) => (
+                <View key={index} style={styles.holidayMonthCard}>
+                  <Text style={styles.holidayMonthTitle}>{monthItem.month}</Text>
+                  <View style={styles.holidayGrid}>
+                    {monthItem.holidays.map((holiday, idx) => (
+                      <View key={idx} style={styles.holidayCard}>
+                        <View style={styles.holidayDateContainer}>
+                          <Text style={styles.holidayDate}>{holiday.date}</Text>
+                        </View>
+                        <Text style={styles.holidayName}>{holiday.name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
-
       </ScrollView>
 
-      {/* Apply Leave Modal */}
+      {/* Enhanced Apply Leave Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -249,39 +275,58 @@ function Leave() {
       >
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Apply Leave</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Apply for Leave</Text>
+              <TouchableOpacity 
+                onPress={() => setModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <MaterialCommunityIcons name="close" size={24} color="#8a9ba8" />
+              </TouchableOpacity>
+            </View>
             
             {/* Start Date Picker */}
-            <TouchableOpacity
-              style={styles.input}
-              onPress={() => setShowStartPicker(true)}
-            >
-              <Text style={{ color: startDate ? '#fff' : '#888' }}>
-                {startDate ? startDate : 'Start Date (YYYY-MM-DD)'}
-              </Text>
-            </TouchableOpacity>
-         {showStartPicker && (
-                <DateTimePicker
-                    value={startDate ? new Date(startDate) : new Date()}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={(event, selectedDate) => {
-                    setShowStartPicker(false);
-                    if (selectedDate) setStartDate(selectedDate.toISOString().slice(0, 10));
-                    }}
-                    minimumDate={new Date()} // <-- Prevents selecting before today
-                    maximumDate={endDate ? new Date(endDate) : undefined}
-                />
-                )}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>From Date</Text>
+              <TouchableOpacity
+                style={styles.dateInput}
+                onPress={() => setShowStartPicker(true)}
+              >
+                <MaterialCommunityIcons name="calendar-outline" size={20} color="#8a9ba8" />
+                <Text style={[styles.dateText, { color: startDate ? '#fff' : '#8a9ba8' }]}>
+                  {startDate || 'Select start date'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {showStartPicker && (
+              <DateTimePicker
+                value={startDate ? new Date(startDate) : new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={(event, selectedDate) => {
+                  setShowStartPicker(false);
+                  if (selectedDate) setStartDate(selectedDate.toISOString().slice(0, 10));
+                }}
+                minimumDate={new Date()}
+                maximumDate={endDate ? new Date(endDate) : undefined}
+              />
+            )}
+
             {/* End Date Picker */}
-            <TouchableOpacity
-              style={styles.input}
-              onPress={() => setShowEndPicker(true)}
-            >
-              <Text style={{ color: endDate ? '#fff' : '#888' }}>
-                {endDate ? endDate : 'End Date (YYYY-MM-DD)'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>To Date</Text>
+              <TouchableOpacity
+                style={styles.dateInput}
+                onPress={() => setShowEndPicker(true)}
+              >
+                <MaterialCommunityIcons name="calendar-outline" size={20} color="#8a9ba8" />
+                <Text style={[styles.dateText, { color: endDate ? '#fff' : '#8a9ba8' }]}>
+                  {endDate || 'Select end date'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             {showEndPicker && (
               <DateTimePicker
                 value={endDate ? new Date(endDate) : new Date()}
@@ -291,25 +336,50 @@ function Leave() {
                   setShowEndPicker(false);
                   if (selectedDate) setEndDate(selectedDate.toISOString().slice(0, 10));
                 }}
-                minimumDate={startDate ? new Date(startDate) : undefined}
+                minimumDate={startDate ? new Date(startDate) : new Date()}
               />
             )}
 
-            <TouchableOpacity style={styles.modalButton} onPress={applyLeave}>
-              <Text style={styles.modalButtonText}>Submit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.modalButton, { backgroundColor: '#ff4d6d', marginTop: 10 }]} 
-              onPress={() => { setStartDate(null); setEndDate(null); setModalVisible(false); }}
-            >
-              <Text style={styles.modalButtonText}>Cancel</Text>
-            </TouchableOpacity>
+            {/* Description Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Reason for Leave</Text>
+              <TextInput
+                style={styles.descriptionInput}
+                value={description}
+                onChangeText={setDescription}
+                placeholder="Enter the reason for your leave request..."
+                placeholderTextColor="#8a9ba8"
+                multiline={true}
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity 
+                style={styles.cancelButton} 
+                onPress={() => {
+                  setStartDate('');
+                  setEndDate('');
+                  setDescription('');
+                  setModalVisible(false);
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.submitButton} 
+                onPress={applyLeave}
+              >
+                <MaterialCommunityIcons name="send-outline" size={18} color="#fff" />
+                <Text style={styles.submitButtonText}>Submit</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
-
     </SafeAreaView>
-  )
+  );
 }
 
 export default Leave;
@@ -317,188 +387,132 @@ export default Leave;
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#111a22',
+    backgroundColor: '#0f1419',
   },
   container: {
     padding: 20,
+    paddingBottom: 30,
+  },
+  headerContainer: {
+    marginBottom: 24,
     alignItems: 'center',
   },
   headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 20,
-  },
-  summaryContainer: {
-    width: '95%',
-    padding: 20,
-    backgroundColor: '#1e262f',
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 20,
-    gap: 20
-  },
-  summaryText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff'
-  },
-  applyButton: {
-    width: '95%',
-    padding: 15,
-    backgroundColor: '#1e90ff',
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 20
-  },
-  applyButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16
-  },
-  historyContainer: {
-    width: '95%',
-  },
-  historyTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
-    textAlign: 'center'
-  },
-  historyItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 18,
-    marginBottom: 12,
-    backgroundColor: '#2a323d',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#3a424d',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  leaveLeftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  leaveIcon: {
-    marginRight: 12,
-    opacity: 0.8,
-  },
-  leaveDateContainer: {
-    flex: 1,
-  },
-  leaveRightSection: {
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  leaveTypeBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    minWidth: 60,
-    alignItems: 'center',
-  },
-  leaveTypeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 4,
     letterSpacing: 0.5,
   },
-  leaveStatusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  historyDate: {
-    color: '#fff',
-    fontWeight: '600',
+  headerSubtext: {
     fontSize: 14,
-    lineHeight: 18,
+    color: '#8a9ba8',
+    fontWeight: '400',
   },
-  historyType: {
-    color: '#1e90ff',
-    fontWeight: 'bold'
+  summaryContainer: {
+    backgroundColor: 'rgba(30, 144, 255, 0.08)',
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(30, 144, 255, 0.2)',
   },
-  historyStatus: {
-    fontWeight: '600',
-    fontSize: 13,
+  summaryIconContainer: {
+    alignSelf: 'center',
+    marginBottom: 16,
   },
-  modalBackground: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center'
+  summaryContent: {
+    gap: 16,
   },
-  modalContainer: {
-    width: '85%',
-    padding: 20,
-    backgroundColor: '#1e262f',
-    borderRadius: 10,
-    alignItems: 'center'
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 20
-  },
-  input: {
-    width: '100%',
-    padding: 10,
-    backgroundColor: '#111a22',
-    color: '#fff',
-    borderRadius: 8,
-    marginBottom: 20
-  },
-  modalButton: {
-    width: '100%',
-    padding: 15,
-    backgroundColor: '#1e90ff',
-    borderRadius: 10,
-    alignItems: 'center'
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontWeight: 'bold'
-  },
-  summaryHeader: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  summaryDetails: {
+  summaryStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
+    alignItems: 'center',
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 13,
+    color: '#8a9ba8',
+    fontWeight: '500',
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: 'rgba(138, 155, 168, 0.3)',
+  },
+  progressBarContainer: {
+    gap: 8,
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#1e90ff',
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 12,
+    color: '#8a9ba8',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  applyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1e90ff',
+    paddingVertical: 16,
+    borderRadius: 16,
+    marginBottom: 24,
+    gap: 8,
+    shadowColor: '#1e90ff',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  applyButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 16,
+    letterSpacing: 0.5,
+  },
+  contentContainer: {
+    flex: 1,
   },
   toggleContainer: {
-    width: '100%',
     flexDirection: 'row',
-    backgroundColor: '#233648',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 25,
-    gap: 4,
+    backgroundColor: '#1a2332',
+    borderRadius: 16,
+    padding: 6,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#2a3441',
   },
   selectedTab: {
     flex: 1,
-    backgroundColor: '#4da6ff',
-    borderRadius: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    backgroundColor: '#1e90ff',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    shadowColor: "#4da6ff",
+    gap: 6,
+    shadowColor: '#1e90ff',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -507,52 +521,257 @@ const styles = StyleSheet.create({
   unselectedTab: {
     flex: 1,
     backgroundColor: 'transparent',
-    borderRadius: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   toggleText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
-  holidayMonth:{
-    gap:10,
-    paddingHorizontal:10,
+  historyContainer: {
+    gap: 12,
   },
-  holidayList: {
-    width: '100%',
+  leaveCard: {
+    backgroundColor: '#1a2332',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#2a3441',
+  },
+  leaveCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  leaveCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  leaveCardRight: {
+    alignItems: 'flex-end',
+  },
+  leaveDateText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  leaveDaysText: {
+    color: '#8a9ba8',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  leaveDescription: {
+    color: '#b8c5d1',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
+  leaveCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  leaveTypeBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  leaveTypeText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  holidaysContainer: {
+    gap: 16,
+  },
+  holidayMonthCard: {
+    backgroundColor: '#1a2332',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#2a3441',
+  },
+  holidayMonthTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  holidayGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 12,
   },
-  holidayItem:{
+  holidayCard: {
     width: '48%',
-    padding: 10,
-    backgroundColor: '#2a323d',
-    borderRadius: 8,
+    backgroundColor: 'rgba(30, 144, 255, 0.08)',
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    gap: 5
+    borderWidth: 1,
+    borderColor: 'rgba(30, 144, 255, 0.2)',
   },
-  holidayMonthText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 18,
-    textAlign: 'center',
+  holidayDateContainer: {
+    backgroundColor: '#1e90ff',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   holidayDate: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 20,
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   holidayName: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '500',
     textAlign: 'center',
+    lineHeight: 18,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 20, 25, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#1a2332',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#2a3441',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 0.5,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    letterSpacing: 0.3,
+  },
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0f1419',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#2a3441',
+    gap: 12,
+  },
+  dateText: {
+    fontSize: 15,
+    flex: 1,
+  },
+  descriptionInput: {
+    backgroundColor: '#0f1419',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#2a3441',
+    color: '#ffffff',
+    fontSize: 15,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButtonText: {
+    color: '#8a9ba8',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  submitButton: {
+    flex: 1,
+    backgroundColor: '#1e90ff',
+    borderRadius: 12,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#1e90ff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  submitButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
 });
