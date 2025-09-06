@@ -1,9 +1,9 @@
-import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import Feather from '@expo/vector-icons/Feather'
-import { SafeAreaView } from "react-native-safe-area-context"
-import { useEffect, useState } from "react"
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { useRouter } from "expo-router"
+import { useEffect, useState } from "react"
+import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 function Home() {
   const [dateTime, setDateTime] = useState(new Date());

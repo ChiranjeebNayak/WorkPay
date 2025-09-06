@@ -1,16 +1,18 @@
-import React, { useState } from 'react'
-import { StyleSheet, Text, View, TouchableOpacity, Platform, TextInput } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function OfficeSettings() {
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [showStart, setShowStart] = useState(false);
   const [showEnd, setShowEnd] = useState(false);
+  const [breakHours, setBreakHours] = useState(0);
+  const [breakMinutes, setBreakMinutes] = useState(0);
   const router = useRouter();
 
   const handleTimeChange = (event, selectedTime, type) => {
@@ -112,6 +114,58 @@ function OfficeSettings() {
             )}
           </View>
         </View>
+      </View>
+
+      {/* Break Time */}
+      <View style={{ gap: 20, padding: 10, marginTop: 10 }}>
+        <Text style={{ color: '#8f9eb3', fontSize: 16, fontWeight: 'bold' }}>BREAK TIME</Text>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {/* Hours */}
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: '#8f9eb3', fontSize: 14 }}>Hours</Text>
+            <TextInput
+              keyboardType="numeric"
+              maxLength={2}
+              value={breakHours.toString()}
+              onChangeText={(val) => setBreakHours(Number(val) || 0)}
+              style={{
+                borderWidth: 1,
+                borderColor: '#334155',
+                borderRadius: 10,
+                padding: 15,
+                color: '#fff',
+                textAlign: 'center'
+              }}
+              placeholder="0"
+              placeholderTextColor="#8f9eb3"
+            />
+          </View>
+
+          {/* Minutes */}
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: '#8f9eb3', fontSize: 14 }}>Minutes</Text>
+            <TextInput
+              keyboardType="numeric"
+              maxLength={2}
+              value={breakMinutes.toString()}
+              onChangeText={(val) => setBreakMinutes(Number(val) || 0)}
+              style={{
+                borderWidth: 1,
+                borderColor: '#334155',
+                borderRadius: 10,
+                padding: 15,
+                color: '#fff',
+                textAlign: 'center'
+              }}
+              placeholder="0"
+              placeholderTextColor="#8f9eb3"
+            />
+          </View>
+        </View>
+
+        <Text style={{ color: '#8f9eb3' }}>
+          Break in minutes: {breakHours * 60 + breakMinutes} mins
+        </Text>
       </View>
     </SafeAreaView>
   )
