@@ -2,19 +2,43 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getToken } from '../../../services/ApiService';
 
 function Dashboard() {
   const router = useRouter();
+  const [data, setData] = useState(null);
+
+  const dashboardDetails = async () => {
+    try {
+      const response = await axios.get('http://10.0.2.2:5000/api/attendances/getTodayAttendance', {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+      const data = response.data;
+      console.log(data);
+      setData(data);
+    } catch (error) {
+      console.error('Error fetching dashboard details:', error);
+      return null;
+    }
+  }
+
+  useEffect(() => {
+    dashboardDetails();
+  }, []);
   
   // Sample data - replace with real data
   const stats = [
-    { icon: 'user', iconSet: 'AntDesign', color: '#4A9EFF', count: '124', label: 'Total Employees' },
-    { icon: 'user-check', iconSet: 'Feather', color: '#00D4AA', count: '98', label: 'Present Today' },
-    { icon: 'user-x', iconSet: 'Feather', color: '#FF6B6B', count: '15', label: 'Absent Today' },
-    { icon: 'timer-outline', iconSet: 'Ionicons', color: '#FFB800', count: '11', label: 'Late Arrivals' },
+    { icon: 'user', iconSet: 'AntDesign', color: '#4A9EFF', label: 'Total Employees',field:"totalEmployees" },
+    { icon: 'user-check', iconSet: 'Feather', color: '#00D4AA', label: 'Present Today',field:"totalPresent" },
+    { icon: 'user-x', iconSet: 'Feather', color: '#FF6B6B', label: 'Absent Today',field:"totalAbsent" },
+    { icon: 'timer-outline', iconSet: 'Ionicons', color: '#FFB800', label: 'Late Arrivals',field:"totalLate" },
   ];
 
   // Sample absent employees data
@@ -70,7 +94,7 @@ function Dashboard() {
                     {renderIcon(stat.icon, stat.iconSet, stat.color)}
                   </View>
                   <View style={styles.cardText}>
-                    <Text style={styles.cardCount}>{stat.count}</Text>
+                    <Text style={styles.cardCount}>{stat.field === "totalPresent" ? (data?.["totalLate"] + data?.["totalPresent"]) : data?.[stat.field]}</Text>
                     <Text style={styles.cardLabel}>{stat.label}</Text>
                   </View>
                 </View>
