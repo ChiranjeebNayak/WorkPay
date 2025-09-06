@@ -39,7 +39,23 @@ function Home() {
     fetchDashboardDetails();
   }, []);
 
-
+  const handleAttendanceAction = async (action) => {
+    try {
+      const response = await axios.post(`http://10.0.2.2:5000/api/attendances/mark`, {
+        type: action
+      },{
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+      const data = response.data;
+      if(data){
+        await fetchDashboardDetails();
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard details:', error);
+    }
+  }
 
   const timeString = dateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   const dateString = dateTime.toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })
@@ -111,22 +127,31 @@ function Home() {
             <Text style={styles.timeText}>{timeString}</Text>
             <Text style={styles.dateText}>{dateString}</Text>
           </View>
-
-          <TouchableOpacity style={styles.checkButton}>
+          {
+            dashboardDetails?.employeeDetails?.checkinTime === null &&
+             <TouchableOpacity 
+            onPress={() => handleAttendanceAction('checkin')}
+             style={styles.checkButton}>
             <View style={styles.checkButtonInner}>
               <MaterialCommunityIcons name="fingerprint" size={48} color="white" />
               <Text style={styles.checkButtonText}>Check In</Text>
               <Text style={styles.checkButtonSubtext}>Tap to clock in</Text>
-            </View>
+            </View> 
           </TouchableOpacity>
+          }
+         
           {/* Example for Check Out */}
-          {/* <TouchableOpacity style={[styles.checkButton, styles.checkOutButton]}>
+          { dashboardDetails?.employeeDetails?.checkinTime !== null && dashboardDetails?.employeeDetails?.checkoutTime === null &&
+          <TouchableOpacity 
+            onPress={() => handleAttendanceAction('checkout')}
+          style={[styles.checkButton, styles.checkOutButton]}>
             <View style={styles.checkButtonInner}>
               <MaterialCommunityIcons name="fingerprint" size={48} color="white" />
               <Text style={styles.checkButtonText}>Check Out</Text>
               <Text style={styles.checkButtonSubtext}>Tap to clock out</Text>
             </View>
-          </TouchableOpacity> */}
+          </TouchableOpacity>
+          }
         </View>
 
         {/* Today's Summary */}
@@ -140,7 +165,7 @@ function Home() {
             <View style={styles.iconContainer}>
               <MaterialCommunityIcons name="login" size={24} color="#10B981" />
             </View>
-            <Text style={styles.detailTime}>-- : --</Text>
+            <Text style={styles.detailTime}>{dashboardDetails?.employeeDetails?.checkinTime === null ? "-- : --" : dashboardDetails?.employeeDetails?.checkinTime}</Text>
             <Text style={styles.detailLabel}>Check In</Text>
           </View>
           
@@ -150,7 +175,7 @@ function Home() {
             <View style={[styles.iconContainer, { backgroundColor: '#FEF3F2' }]}>
               <MaterialCommunityIcons name="logout" size={24} color="#F04438" />
             </View>
-            <Text style={styles.detailTime}>-- : --</Text>
+            <Text style={styles.detailTime}>{dashboardDetails?.employeeDetails?.checkoutTime === null ? "-- : --" : dashboardDetails?.employeeDetails?.checkoutTime}</Text>
             <Text style={styles.detailLabel}>Check Out</Text>
           </View>
           
@@ -160,7 +185,7 @@ function Home() {
             <View style={[styles.iconContainer, { backgroundColor: '#FFFBEB' }]}>
               <MaterialCommunityIcons name="clock-plus-outline" size={24} color="#F79009" />
             </View>
-            <Text style={styles.detailTime}>-- : --</Text>
+            <Text style={styles.detailTime}>{dashboardDetails?.employeeDetails?.overtime === null ? "-- : --" : dashboardDetails?.employeeDetails?.overtime}</Text>
             <Text style={styles.detailLabel}>Overtime</Text>
           </View>
         </View>
