@@ -1,8 +1,10 @@
+import Feather from "@expo/vector-icons/Feather";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Feather from "@expo/vector-icons/Feather";
-import { useState } from "react";
 import DataCard from "../../components/Attendance/DataCard";
+import { getToken } from "../../services/ApiService";
 
 const months = [
   { number: 1, name: "January" },
@@ -19,50 +21,18 @@ const months = [
   { number: 12, name: "December" },
 ];
 
-// Dummy attendance data
-const dummyAttendance = [
-  {
-    day: "1 August",
-    checkIn: "09:02 AM",
-    checkOut: "06:15 PM",
-    status: "Present",
-    totalHours: "9h 13m",
-    overtime: "1.0h",
-  },
-  {
-    day: "2 August",
-    checkIn: "08:56 AM",
-    checkOut: "06:05 PM",
-    status: "Present",
-    totalHours: "9h 09m",
-    overtime: "0.5h",
-  },
-  {
-    day: "3 August",
-    checkIn: "—",
-    checkOut: "—",
-    status: "Absent",
-    totalHours: "0h",
-    overtime: "0h",
-  },
-  {
-    day: "4 August",
-    checkIn: "09:10 AM",
-    checkOut: "06:45 PM",
-    status: "Present",
-    totalHours: "9h 35m",
-    overtime: "1.5h",
-  },
-  {
-    day: "5 August",
-    checkIn: "08:50 AM",
-    checkOut: "05:58 PM",
-    status: "Present",
-    totalHours: "9h 08m",
-    overtime: "0.3h",
-  },
-  // ... you can add more dummy days
-];
+
+const countPresentDays = (data) => {
+  return data.filter(item => item.status === "PRESENT" || item.status === "LATE").length;
+};
+
+const countAbsentDays = (data) => {
+  return data.filter(item => item.status === "ABSENT").length;
+};
+
+const calculateTotalOvertime = (data) => {
+  return data.reduce((total, item) => total + (item.overtime || 0), 0) / 60;
+}
 
 function Attendance() {
   // Get today's month/year
@@ -73,6 +43,13 @@ function Attendance() {
   // States
   const [currentMonth, setCurrentMonth] = useState(thisMonth);
   const [currentYear, setCurrentYear] = useState(thisYear);
+  const [attendanceData, setAttendanceData] = useState([]);
+
+  const getTotalDaysInMonth = (month, year) => {
+  return new Date(year, month, 0).getDate();
+};
+
+
 
   // Handle left arrow (previous month)
   const handlePrev = () => {
@@ -93,6 +70,27 @@ function Attendance() {
       setCurrentMonth(currentMonth + 1);
     }
   };
+
+  const fetchAttendanceData = async () => {
+    try{
+      const response = await axios.get(`http://10.0.2.2:5000/api/attendances/getAttendance?month=${currentMonth}&year=${currentYear}`
+        ,{
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+        }
+      }
+      );
+      const data = response.data;
+      setAttendanceData(data);
+      console.log(data);
+    }catch(error){
+      console.error("Error fetching attendance data:", error);
+    }
+  };
+
+  useEffect(()=>{
+    fetchAttendanceData();
+  },[currentMonth,currentYear])
 
   // Disable right arrow if at today's month/year
   const isNextDisabled =
@@ -125,28 +123,29 @@ function Attendance() {
       </View>
 
       {/* FlatList for better performance */}
-      <FlatList
-        data={dummyAttendance}
-        keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={{ paddingBottom: 20 }}
-        ListHeaderComponent={
-          <View style={styles.overViewContainer}>
+      {attendanceData.attendanceRecords.length > 0 && 
+        <FlatList
+          data={attendanceData.attendanceRecords}
+          keyExtractor={(item, index) => index.toString()}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          ListHeaderComponent={
+            <View style={styles.overViewContainer}>
             <View style={styles.overViewCard}>
               <View style={styles.row}>
                 <Text style={styles.label}>Total Working Days</Text>
-                <Text style={styles.value}>22</Text>
+                <Text style={styles.value}>{getTotalDaysInMonth(currentMonth, currentYear)}</Text>
               </View>
               <View style={styles.row}>
                 <Text style={styles.label}>Total Present Days</Text>
-                <Text style={styles.value}>20</Text>
+                <Text style={styles.value}>{countPresentDays(attendanceData.attendanceRecords)}</Text>
               </View>
               <View style={styles.row}>
                 <Text style={styles.label}>Total Absent Days</Text>
-                <Text style={styles.value}>2</Text>
+                <Text style={styles.value}>{countAbsentDays(attendanceData.attendanceRecords)}</Text>
               </View>
               <View style={styles.row}>
                 <Text style={styles.label}>Total Overtime Hours</Text>
-                <Text style={styles.value}>8.5h</Text>
+                <Text style={styles.value}>{calculateTotalOvertime(attendanceData.attendanceRecords)}hr</Text>
               </View>
             </View>
           </View>
@@ -156,7 +155,7 @@ function Attendance() {
             <DataCard data={item} />
           </View>
         )}
-      />
+      />}
     </SafeAreaView>
   );
 }
