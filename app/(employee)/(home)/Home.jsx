@@ -1,14 +1,18 @@
 import Feather from '@expo/vector-icons/Feather'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import axios from 'axios'
 import { useRouter } from "expo-router"
 import { useEffect, useState } from "react"
 import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { getToken } from '../../../services/ApiService'
+import { calculateHoursManual, formatMinutesToHHMM } from "../../../utils/TimeUtils"
 
 function Home() {
   const [dateTime, setDateTime] = useState(new Date());
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
+  const [dashboardDetails, setDashboardDetails] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -16,6 +20,26 @@ function Home() {
     }, 1000)
     return () => clearInterval(timer)
   }, [])
+
+  const fetchDashboardDetails = async () => {
+    try {
+      const response = await axios.get('http://10.0.2.2:5000/api/employees/dashboard', {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+      const data = response.data;
+      setDashboardDetails(data);
+    } catch (error) {
+      console.error('Error fetching dashboard details:', error);
+    }
+  }
+
+  useEffect(() => {
+    fetchDashboardDetails();
+  }, []);
+
+
 
   const timeString = dateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   const dateString = dateTime.toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })
@@ -27,9 +51,9 @@ function Home() {
       {/* Header */}
       <View style={styles.headerContainer}>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Welcome back, User</Text>
+          <Text style={styles.headerTitle}>Welcome back, {dashboardDetails?.employeeDetails?.name}</Text>
           <View style={styles.employeeIdBadge}>
-            <Text style={styles.employeeIdText}>ID: 12345</Text>
+            <Text style={styles.employeeIdText}>ID: {dashboardDetails?.employeeDetails?.id}</Text>
           </View>
         </View>
         <View style={styles.menuContainer}>
@@ -47,7 +71,12 @@ function Home() {
                 onPress={() => {
                   setShowMenu(false);
                   // Navigate to profile page
-                  router.push('/(employee)/(home)/EmployeeProfile');
+                   router.push({
+                    pathname: "/(employee)/(home)/EmployeeProfile",
+                    params: { 
+                      employee: JSON.stringify(dashboardDetails?.employeeDetails) 
+                    }
+                  });
                 }}
               >
                 <Feather name="user" size={18} color="#F8FAFC" />
@@ -139,12 +168,12 @@ function Home() {
         {/* Additional Stats Card */}
         <View style={styles.statsCard}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>8h 30m</Text>
+            <Text style={styles.statValue}>{calculateHoursManual(dashboardDetails?.officeDetails?.checkin, dashboardDetails?.officeDetails?.checkout)}</Text>
             <Text style={styles.statLabel}>Regular Hours</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>0h 0m</Text>
+            <Text style={styles.statValue}>{formatMinutesToHHMM(dashboardDetails?.officeDetails?.breakTime)}</Text>
             <Text style={styles.statLabel}>Break Time</Text>
           </View>
         </View>

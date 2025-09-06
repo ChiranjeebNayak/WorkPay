@@ -1,12 +1,11 @@
-import * as Keychain from 'react-native-keychain';
-// or import AsyncStorage from '@react-native-async-storage/async-storage';
+// services/tokenService.js
+import * as SecureStore from 'expo-secure-store';
 
-const SERVICE_NAME = 'USER_AUTH_TOKEN';
+const TOKEN_KEY = 'USER_AUTH_TOKEN';
 
-// Using Keychain (recommended)
 export const storeToken = async (token) => {
   try {
-    await Keychain.setInternetCredentials(SERVICE_NAME, 'user', token);
+    await SecureStore.setItemAsync(TOKEN_KEY, token);
     return true;
   } catch (error) {
     console.error('Error storing token:', error);
@@ -16,8 +15,8 @@ export const storeToken = async (token) => {
 
 export const getToken = async () => {
   try {
-    const credentials = await Keychain.getInternetCredentials(SERVICE_NAME);
-    return credentials ? credentials.password : null;
+    const token = await SecureStore.getItemAsync(TOKEN_KEY);
+    return token;
   } catch (error) {
     console.error('Error retrieving token:', error);
     return null;
@@ -26,7 +25,7 @@ export const getToken = async () => {
 
 export const removeToken = async () => {
   try {
-    await Keychain.resetInternetCredentials(SERVICE_NAME);
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
     return true;
   } catch (error) {
     console.error('Error removing token:', error);

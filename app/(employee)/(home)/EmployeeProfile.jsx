@@ -1,18 +1,12 @@
-import { ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { useRouter } from "expo-router";
+import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Dummy employee data
-const employeeData = {
-  name: "John Smith",
-  phone: "+1 (555) 123-4567",
-  baseSalary: "$5,000",
-  overtimeRate: "$30/hour",
-  employeeId: "12345"
-};
+
 
 function Profile() {
   const router = useRouter();
@@ -23,6 +17,9 @@ function Profile() {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+   const { employee } = useLocalSearchParams();
+  const employeeData = employee ? JSON.parse(employee) : null;
 
   const handlePasswordUpdate = () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
@@ -83,12 +80,12 @@ function Profile() {
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatarBackground}>
-              <Text style={styles.avatarText}>JS</Text>
+              <Text style={styles.avatarText}>{employeeData.name.charAt(0)}</Text>
             </View>
           </View>
           <Text style={styles.userName}>{employeeData.name}</Text>
           <View style={styles.idBadge}>
-            <Text style={styles.idText}>Employee ID: {employeeData.employeeId}</Text>
+            <Text style={styles.idText}>Employee ID: {employeeData.id}</Text>
           </View>
         </View>
 

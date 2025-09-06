@@ -1,23 +1,124 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  Animated,
+  View
 } from 'react-native';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { storeToken } from '../services/ApiService';
 
 function index() {
   const [isEmployee, setIsEmployee] = useState(true);
   const [employeeLogin, setEmployeeLogin] = useState({ phone: '', password: '' });
   const [adminLogin, setAdminLogin] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
+  const [errors,setErrors] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+    // Clear errors when switching tabs
+  const clearErrors = () => {
+    setErrors({});
+  };
+
+  // Login handlers
+  const handleEmployeeLogin = async () => {
+    clearErrors();
+    
+    // Validation
+    const newErrors = {};
+    
+    if (!employeeLogin.phone.toString().trim()) {
+      newErrors.phone = 'Please enter your phone number';
+    } else if (employeeLogin.phone.toString().length < 10) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+
+    if (!employeeLogin.password.trim()) {
+      newErrors.password = 'Please enter your password';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await axios.post('http://10.0.2.2:5000/api/employees/login', {
+        phone: employeeLogin.phone,
+        password: employeeLogin.password,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (response.data.token) {
+        await storeToken(response.data.token);
+        router.push('/(employee)/(home)/Home');
+      }
+    } catch (error) {
+      console.error('Employee login error:', error);
+      const errorMessage = error.response?.data?.message || 'Invalid phone number or password';
+      setErrors({ login: errorMessage });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAdminLogin = async () => {
+    clearErrors();
+    
+    // Validation
+    const newErrors = {};
+    
+    if (!adminLogin.email.trim()) {
+      newErrors.email = 'Please enter your email address';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(adminLogin.email)) {
+        newErrors.email = 'Please enter a valid email address';
+      }
+    }
+
+    if (!adminLogin.password.trim()) {
+      newErrors.password = 'Please enter your password';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await axios.post('http://10.0.2.2:5000/api/admins/login', {
+        email: adminLogin.email,
+        password: adminLogin.password,
+      });
+      
+      if (response.data.token) {
+        await storeToken(response.data.token);
+        router.push('/(admin)/(dashboard)/Dashboard');
+      }
+    } catch (error) {
+      console.error('Admin login error:', error);
+      const errorMessage = error.response?.data?.message || 'Invalid email or password';
+      setErrors({ login: errorMessage });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   return (
     <KeyboardAvoidingView
@@ -75,26 +176,40 @@ function index() {
             <>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Phone Number</Text>
-                <View style={styles.inputContainer}>
+                <View style={[styles.inputContainer,errors.phone && styles.inputError]}>
                   <MaterialCommunityIcons name="phone" size={20} color="#666" style={styles.inputIcon} />
                   <TextInput
                     value={employeeLogin.phone}
-                    onChangeText={(text) => setEmployeeLogin({ ...employeeLogin, phone: text })}
+                   onChangeText={(text) => {
+                      setEmployeeLogin({ ...employeeLogin, phone: text });
+                      if (errors.phone) {
+                        setErrors(prev => ({ ...prev, phone: null }));
+                      }
+                    }}
                     style={styles.input}
                     placeholder="Enter your phone number"
                     placeholderTextColor="#666"
-                    keyboardType="phone-pad"
+                    keyboardType="number-pad"
+                    maxLength={10}
                   />
                 </View>
+                 {errors.phone && (
+                  <Text style={styles.errorText}>{errors.phone}</Text>
+                )}
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Password</Text>
-                <View style={styles.inputContainer}>
+                <View style={[styles.inputContainer, errors.password && styles.inputError]}>
                   <MaterialCommunityIcons name="lock" size={20} color="#666" style={styles.inputIcon} />
                   <TextInput
                     value={employeeLogin.password}
-                    onChangeText={(text) => setEmployeeLogin({ ...employeeLogin, password: text })}
+                    onChangeText={(text) => {
+                      setEmployeeLogin({ ...employeeLogin, password: text });
+                      if (errors.password) {
+                        setErrors(prev => ({ ...prev, password: null }));
+                      }
+                    }}
                     style={styles.input}
                     placeholder="Enter your password"
                     placeholderTextColor="#666"
@@ -111,25 +226,44 @@ function index() {
                     />
                   </TouchableOpacity>
                 </View>
+                {errors.password && (
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                )}
               </View>
 
               <TouchableOpacity
-                onPress={() => router.push('/(employee)/(home)/Home')}
-                style={styles.loginButton}
+                onPress={handleEmployeeLogin}
+                style={[styles.loginButton, isLoading && styles.disabledButton]}
+                disabled={isLoading}
               >
-                <MaterialCommunityIcons name="login" size={20} color="#fff" />
-                <Text style={styles.buttonText}>Sign In</Text>
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <MaterialCommunityIcons name="login" size={20} color="#fff" />
+                    <Text style={styles.buttonText}>Sign In</Text>
+                  </>
+                )}
               </TouchableOpacity>
+
+              {errors.login && (
+                <Text style={styles.loginErrorText}>{errors.login}</Text>
+              )}
             </>
           ) : (
             <>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email Address</Text>
-                <View style={styles.inputContainer}>
+                <View style={[styles.inputContainer, errors.email && styles.inputError]}>
                   <MaterialCommunityIcons name="email" size={20} color="#666" style={styles.inputIcon} />
                   <TextInput
                     value={adminLogin.email}
-                    onChangeText={(text) => setAdminLogin({ ...adminLogin, email: text })}
+                    onChangeText={(text) => {
+                      setAdminLogin({ ...adminLogin, email: text });
+                      if (errors.email) {
+                        setErrors(prev => ({ ...prev, email: null }));
+                      }
+                    }}
                     style={styles.input}
                     placeholder="Enter your email"
                     placeholderTextColor="#666"
@@ -141,11 +275,16 @@ function index() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Password</Text>
-                <View style={styles.inputContainer}>
+                <View style={[styles.inputContainer, errors.password && styles.inputError]}>
                   <MaterialCommunityIcons name="lock" size={20} color="#666" style={styles.inputIcon} />
                   <TextInput
                     value={adminLogin.password}
-                    onChangeText={(text) => setAdminLogin({ ...adminLogin, password: text })}
+                    onChangeText={(text) => {
+                      setAdminLogin({ ...adminLogin, password: text });
+                      if (errors.password) {
+                        setErrors(prev => ({ ...prev, password: null }));
+                      }
+                    }}
                     style={styles.input}
                     placeholder="Enter your password"
                     placeholderTextColor="#666"
@@ -162,14 +301,24 @@ function index() {
                     />
                   </TouchableOpacity>
                 </View>
+                 {errors.password && (
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                )}
               </View>
 
-              <TouchableOpacity 
-                onPress={() => router.push('/(admin)/(dashboard)/Dashboard')} 
-                style={styles.loginButton}
+               <TouchableOpacity 
+                onPress={handleAdminLogin}
+                style={[styles.loginButton, isLoading && styles.disabledButton]}
+                disabled={isLoading}
               >
-                <MaterialCommunityIcons name="shield-check" size={20} color="#fff" />
-                <Text style={styles.buttonText}>Admin Access</Text>
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <MaterialCommunityIcons name="shield-check" size={20} color="#fff" />
+                    <Text style={styles.buttonText}>Admin Access</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </>
           )}
@@ -364,5 +513,25 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 14,
     fontWeight: '500',
+  },
+   disabledButton: {
+    backgroundColor: '#666',
+    shadowOpacity: 0,
+  },
+    errorText: {
+    color: '#ff4757',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  loginErrorText: {
+    color: '#ff4757',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+   inputError: {
+    borderColor: '#ff4757',
+    borderWidth: 1,
   },
 });
