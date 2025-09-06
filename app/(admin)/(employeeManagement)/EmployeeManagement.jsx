@@ -1,21 +1,23 @@
-import React, { useState, useEffect } from 'react'
-import { 
-  StatusBar, 
-  StyleSheet, 
-  Text, 
-  TextInput, 
-  View, 
-  FlatList, 
-  TouchableOpacity, 
-  Modal, 
-  Alert,
-  ScrollView
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  Alert,
+  FlatList,
+  Modal,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getToken } from '../../../services/ApiService';
 
 function EmployeeManagement() {
   const router = useRouter();
@@ -23,61 +25,123 @@ function EmployeeManagement() {
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [isAdding, setIsAdding] = useState(true);
   const [editingEmployee, setEditingEmployee] = useState(null);
   
   // Form state
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    role: 'Employee',
+    email:'',
+    phone:'',
     baseSalary: '',
-    overtimeRate: ''
+    overtimeRate: '',
+    officeId: 1
   });
+
+  const fetchEmployees = async () => {
+    try {
+      const response = await axios.get('http://10.0.2.2:5000/api/employees/getAll',{
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+      setEmployees(response.data);
+      setFilteredEmployees(response.data);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
+  }
+
+  const addEmployee = async () => {
+    if (!validateForm()) return;
+    try {
+      const response = await axios.post('http://10.0.2.2:5000/api/employees/add', {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        baseSalary: formData.baseSalary,
+        overtimeRate: formData.overtimeRate,
+        officeId: formData.officeId,
+        password: "welcome123"
+      }, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Employee added:', response.data.data);
+      setModalVisible(false);
+      fetchEmployees();
+    } catch (error) {
+      console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.officeId);
+      console.error('Error adding employee:', error);
+    }
+  };
+
+
+  const editEmployee = async () => {
+    if (!validateForm()) return;
+    try {
+      const response = await axios.put(`http://10.0.2.2:5000/api/employees/update/${editingEmployee.id}`, {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        baseSalary: formData.baseSalary,
+        overtimeRate: formData.overtimeRate,
+        officeId: formData.officeId
+      }, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Employee edited:', response.data.data);
+      setModalVisible(false);
+      fetchEmployees();
+    } catch (error) {
+      console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.officeId);
+      console.error('Error editing employee:', error);
+    }
+  }
+
+  const deleteEmployee = async (employee) => {
+    Alert.alert(
+      'Confirm Delete',
+      `Are you sure you want to delete ${employee.name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: async () => {
+            try {
+              const response = await axios.delete(`http://10.0.2.2:5000/api/employees/delete/${employee.id}`, {
+                headers: {
+                  authorization: `Bearer ${await getToken()}`
+                }
+              });
+              console.log('Employee deleted:', response.data.message);
+              fetchEmployees();
+            } catch (error) {
+              console.error('Error deleting employee:', error);
+            }
+          }
+        }
+      ]
+    );
+  }
+
+  const handleEmployeeAddandEdit = (type) => {
+    if (type === 'add') {
+      addEmployee();
+    } else if (type === 'edit') {
+      editEmployee();
+    }
+  }
 
   // Sample data - replace with API call
   useEffect(() => {
-    loadEmployees();
+    fetchEmployees();
   }, []);
 
-  const loadEmployees = () => {
-    // Replace with actual API call
-    const sampleEmployees = [
-      {
-        id: 1,
-        name: 'John Smith',
-        phone: '+91 9876543210',
-        role: 'Employee',
-        baseSalary: 35000,
-        overtimeRate: 250
-      },
-      {
-        id: 2,
-        name: 'Sarah Johnson',
-        phone: '+91 9876543211',
-        role: 'Employee',
-        baseSalary: 42000,
-        overtimeRate: 300
-      },
-      {
-        id: 3,
-        name: 'Mike Wilson',
-        phone: '+91 9876543212',
-        role: 'Supervisor',
-        baseSalary: 55000,
-        overtimeRate: 400
-      },
-      {
-        id: 4,
-        name: 'Emily Davis',
-        phone: '+91 9876543213',
-        role: 'Employee',
-        baseSalary: 38000,
-        overtimeRate: 275
-      }
-    ];
-    setEmployees(sampleEmployees);
-    setFilteredEmployees(sampleEmployees);
-  };
 
   // Search functionality
   useEffect(() => {
@@ -96,9 +160,10 @@ function EmployeeManagement() {
     setFormData({
       name: '',
       phone: '',
-      role: 'Employee',
+      email: '',
       baseSalary: '',
-      overtimeRate: ''
+      overtimeRate: '',
+      officeId: 1,
     });
     setEditingEmployee(null);
   };
@@ -112,9 +177,10 @@ function EmployeeManagement() {
     setFormData({
       name: employee.name,
       phone: employee.phone,
-      role: employee.role,
+      email: employee.email,
       baseSalary: employee.baseSalary.toString(),
-      overtimeRate: employee.overtimeRate.toString()
+      overtimeRate: employee.overtimeRate.toString(),
+      officeId: employee.officeId,
     });
     setEditingEmployee(employee);
     setModalVisible(true);
@@ -140,53 +206,7 @@ function EmployeeManagement() {
     return true;
   };
 
-  const saveEmployee = () => {
-    if (!validateForm()) return;
 
-    const employeeData = {
-      name: formData.name.trim(),
-      phone: formData.phone.trim(),
-      role: formData.role,
-      baseSalary: parseFloat(formData.baseSalary),
-      overtimeRate: parseFloat(formData.overtimeRate)
-    };
-
-    if (editingEmployee) {
-      // Update employee
-      const updatedEmployees = employees.map(emp =>
-        emp.id === editingEmployee.id ? { ...employeeData, id: editingEmployee.id } : emp
-      );
-      setEmployees(updatedEmployees);
-    } else {
-      // Add new employee
-      const newEmployee = {
-        ...employeeData,
-        id: Date.now() // Replace with proper ID from backend
-      };
-      setEmployees([...employees, newEmployee]);
-    }
-
-    setModalVisible(false);
-    resetForm();
-  };
-
-  const deleteEmployee = (employee) => {
-    Alert.alert(
-      'Delete Employee',
-      `Are you sure you want to delete ${employee.name}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            const updatedEmployees = employees.filter(emp => emp.id !== employee.id);
-            setEmployees(updatedEmployees);
-          }
-        }
-      ]
-    );
-  };
 
   const renderEmployeeCard = ({ item }) => (
     <View style={styles.employeeCard}>
@@ -204,7 +224,7 @@ function EmployeeManagement() {
         
         <View style={styles.salaryInfo}>
           <Text style={styles.salaryLabel}>Base Salary</Text>
-          <Text style={styles.salaryAmount}>₹{item.baseSalary.toLocaleString()}</Text>
+          <Text style={styles.salaryAmount}>₹{item.baseSalary}</Text>
           <Text style={styles.overtimeRate}>OT: ₹{item.overtimeRate}/hr</Text>
         </View>
       </View>
@@ -212,7 +232,11 @@ function EmployeeManagement() {
       <View style={styles.cardActions}>
         <TouchableOpacity 
           style={[styles.actionButton, styles.viewButton]} 
-          onPress={() => router.push(`/EmployeeDetails`)}
+          onPress={() => router.push(
+           { pathname:`/EmployeeDetails`,
+             params: { id: item.id } 
+             
+            })}
         >
           <Feather name="eye" size={16} color="#4A90E2" />
           <Text style={[styles.actionText, { color: '#4A90E2' }]}>View</Text>
@@ -323,6 +347,18 @@ function EmployeeManagement() {
                 </View>
 
                 <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Email</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.email}
+                    onChangeText={(text) => setFormData({...formData, email: text})}
+                    placeholder="Enter email"
+                    placeholderTextColor="#8A9BAE"
+                    keyboardType="email-address"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
                   <Text style={styles.inputLabel}>Base Salary (₹)</Text>
                   <TextInput
                     style={styles.input}
@@ -354,7 +390,9 @@ function EmployeeManagement() {
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.saveButton} onPress={saveEmployee}>
+                <TouchableOpacity style={styles.saveButton} onPress={()=>{
+                  handleEmployeeAddandEdit(editingEmployee ? 'edit' : 'add');
+                }}>
                   <Text style={styles.saveButtonText}>
                     {editingEmployee ? 'Update' : 'Add'} Employee
                   </Text>

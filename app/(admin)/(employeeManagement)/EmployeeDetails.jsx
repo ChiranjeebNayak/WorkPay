@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react'
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TouchableOpacity, 
-  FlatList, 
-  ScrollView,
-  StatusBar
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import axios from 'axios';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  FlatList,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getToken } from '../../../services/ApiService';
 
 const months = [
   { number: 1, name: "January" },
@@ -31,7 +32,7 @@ const months = [
 
 function EmployeeDetails() {
   const router = useRouter();
-  const { employeeId } = useLocalSearchParams();
+  const { id } = useLocalSearchParams();
   
   // Get today's month/year
   const today = new Date();
@@ -46,25 +47,25 @@ function EmployeeDetails() {
   const [activeTab, setActiveTab] = useState('attendance'); // attendance, payment, leave
   const [employee, setEmployee] = useState(null);
 
+    const fetchEmployeeDetails = async () => {
+    try {
+      const response = await axios.get(`http://10.0.2.2:5000/api/employees/get/${id}`, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+      setEmployee(response.data.data);
+    } catch (error) {
+      console.error('Error fetching employee details:', error);
+    }
+  }
+
   // Sample employee data - replace with API call
   useEffect(() => {
-    loadEmployeeDetails();
-  }, [employeeId]);
+    fetchEmployeeDetails()
+  }, [id]);
 
-  const loadEmployeeDetails = () => {
-    // Replace with actual API call using employeeId
-    const sampleEmployee = {
-      id: employeeId,
-      name: 'John Smith',
-      phone: '+91 9876543210',
-      role: 'Employee',
-      baseSalary: 35000,
-      overtimeRate: 250,
-      joinDate: '2023-01-15',
-      department: 'Production'
-    };
-    setEmployee(sampleEmployee);
-  };
+
 
   // Sample attendance data
   const attendanceData = [
@@ -388,8 +389,8 @@ function EmployeeDetails() {
         <View style={styles.employeeInfo}>
           <Text style={styles.employeeName}>{employee.name}</Text>
           <Text style={styles.employeePhone}>{employee.phone}</Text>
+          <Text style={styles.employeePhone}>{employee.email}</Text>
           <View style={styles.employeeMeta}>
-            <Text style={styles.employeeRole}>{employee.role}</Text>
             <Text style={styles.employeeJoinDate}>Joined: {employee.joinDate}</Text>
           </View>
           <View style={styles.salaryInfo}>

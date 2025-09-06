@@ -191,7 +191,7 @@ function Home() {
             <View style={[styles.iconContainer, { backgroundColor: '#FFFBEB' }]}>
               <MaterialCommunityIcons name="clock-plus-outline" size={24} color="#F79009" />
             </View>
-            <Text style={styles.detailTime}>{dashboardDetails?.employeeDetails?.overtime === null ? "-- : --" : dashboardDetails?.employeeDetails?.overtime}</Text>
+            <Text style={styles.detailTime}>{dashboardDetails?.employeeDetails?.overtime === null ? "-- : --" : dashboardDetails?.employeeDetails?.overtime/60}</Text>
             <Text style={styles.detailLabel}>Overtime</Text>
           </View>
         </View>

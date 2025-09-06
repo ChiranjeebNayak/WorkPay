@@ -31,7 +31,7 @@ const countAbsentDays = (data) => {
 };
 
 const calculateTotalOvertime = (data) => {
-  return data.reduce((total, item) => total + (item.overtime || 0), 0) / 60;
+  return data.reduce((total, item) => total + (item.overTime), 0) / 60;
 }
 
 function Attendance() {
@@ -122,10 +122,10 @@ function Attendance() {
       </View>
 
       {/* FlatList for better performance */}
-      {attendanceData.attendanceRecords.length > 0 && 
+      {attendanceData?.attendanceRecords?.length > 0 && 
         <FlatList
           data={attendanceData.attendanceRecords}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={(item, index) => item.id.toString()}
           contentContainerStyle={{ paddingBottom: 20 }}
           ListHeaderComponent={
             <View style={styles.overViewContainer}>
@@ -136,15 +136,15 @@ function Attendance() {
               </View>
               <View style={styles.row}>
                 <Text style={styles.label}>Total Present Days</Text>
-                <Text style={styles.value}>{countPresentDays(attendanceData.attendanceRecords)}</Text>
+                <Text style={styles.value}>{countPresentDays(attendanceData?.attendanceRecords)}</Text>
               </View>
               <View style={styles.row}>
                 <Text style={styles.label}>Total Absent Days</Text>
-                <Text style={styles.value}>{countAbsentDays(attendanceData.attendanceRecords)}</Text>
+                <Text style={styles.value}>{countAbsentDays(attendanceData?.attendanceRecords)}</Text>
               </View>
               <View style={styles.row}>
                 <Text style={styles.label}>Total Overtime Hours</Text>
-                <Text style={styles.value}>{calculateTotalOvertime(attendanceData.attendanceRecords)}hr</Text>
+                <Text style={styles.value}>{calculateTotalOvertime(attendanceData?.attendanceRecords)}hr</Text>
               </View>
             </View>
           </View>

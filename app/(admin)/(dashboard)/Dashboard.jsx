@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getToken } from '../../../services/ApiService';
+import { getToken, removeToken } from '../../../services/ApiService';
 
 function Dashboard() {
   const router = useRouter();
@@ -21,7 +21,6 @@ function Dashboard() {
         }
       });
       const data = response.data;
-      console.log(data);
       setData(data);
     } catch (error) {
       console.error('Error fetching dashboard details:', error);
@@ -70,13 +69,18 @@ function Dashboard() {
     }
   };
 
+  const handleLogout =async ()=>{
+     await removeToken();
+      router.replace('/')
+  }
+
   return (
     <SafeAreaView style={styles.container}>
 
         {/* header */}
         <View style={styles.header}>
                 <Text style={styles.headerTitle}>Welcome Admin</Text>
-                <TouchableOpacity onPress={() => router.replace('/')} style={styles.logoutButton}>
+                <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
                     <MaterialIcons name="logout" size={24} color="#ffffff" />
                 </TouchableOpacity>
         </View>
