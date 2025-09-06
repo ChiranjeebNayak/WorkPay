@@ -5,7 +5,7 @@ import { useRouter } from "expo-router"
 import { useEffect, useState } from "react"
 import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { getToken } from '../../../services/ApiService'
+import { getToken, removeToken } from '../../../services/ApiService'
 import { calculateHoursManual, formatMinutesToHHMM } from "../../../utils/TimeUtils"
 
 function Home() {
@@ -58,7 +58,12 @@ function Home() {
   }
 
   const timeString = dateTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-  const dateString = dateTime.toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })
+  const dateString = dateTime.toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" });
+
+  const handleLogout = async () => {
+    await removeToken();
+    router.replace('/');
+  }
 
   return (
     <SafeAreaView style={styles.mainContainer}>
@@ -103,9 +108,10 @@ function Home() {
               
               <TouchableOpacity 
                 style={styles.menuItem}
+
                 onPress={() => {
                   setShowMenu(false);
-                  router.replace('/');
+                  handleLogout();
                 }}
               >
                 <Feather name="log-out" size={18} color="#F04438" />
