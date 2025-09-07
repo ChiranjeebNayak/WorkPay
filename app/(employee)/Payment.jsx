@@ -3,7 +3,6 @@ import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { getToken } from '../../services/ApiService'
 
 const months = [
   "January", "February", "March", "April", "May", "June",
@@ -16,66 +15,56 @@ function Payment() {
   const currentYear = today.getFullYear();
 
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [paymentData, setPaymentData] = useState(null);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
-  const salaryHistory = [
-    {
-      id: "1",
-      month: "January",
-      year: currentYear,
-      status: "Paid",
-      baseSalary: 5000,
-      overtime: 300,
-      deduction: 200,
-      advance: 100,
-      total: 5000 + 300 - 200 - 100,
-    },
-    {
-      id: "2",
-      month: "February",
-      year: currentYear,
-      status: "Pending",
-      baseSalary: 5000,
-      overtime: 500,
-      deduction: 150,
-      advance: 0,
-      total: 5000 + 500 - 150,
-    },
-    {
-      id: "3",
-      month: "March",
-      year: currentYear,
-      status: "Paid",
-      baseSalary: 5000,
-      overtime: 400,
-      deduction: 100,
-      advance: 200,
-      total: 5000 + 400 - 100 - 200,
-    },
-  ]
-
   const [expanded, setExpanded] = useState(null);
 
+  // Helper function to calculate totals for a month's transactions
+  const calculateMonthTotals = (transactions) => {
+    const overtime = transactions.reduce((acc, it) => acc + (it.payType === "OVERTIME" ? it.amount : 0), 0);
+    const deduction = transactions.reduce((acc, it) => acc + (it.payType === "DEDUCTION" ? it.amount : 0), 0);
+    const advance = transactions.reduce((acc, it) => acc + (it.payType === "ADVANCE" ? it.amount : 0), 0);
+    
+    return { overtime, deduction, advance };
+  };
+
+  // Helper function to determine payment status
+  const getPaymentStatus = (monthTransactions, baseSalary) => {
+    // You can implement your own logic here
+    // For now, assuming if there are transactions, it's "Paid", otherwise "Pending"
+    return monthTransactions.length > 0 ? "Paid" : "Pending";
+  };
+
   const fetchPaymentHistory = async () => {
-   try{
-    const response = await axios.get(`http://10.0.2.2:5000/api/transactions/employee?year=${selectedYear}`,
-      {
+    try {
+      setLoading(true);
+      const response = await axios.get(`http://10.0.2.2:5000/api/transactions/employee?year=Rs{selectedYear}`, {
         headers: {
-          authorization: `Bearer ${await getToken()}`,
+          authorization: `Bearer Rs{await getToken()}`,
         }
-      }
-    );
-    const data = response.data;
-    console.log(data);
-   }catch(err){
-    console.log(err);
-   }
-  }
-  useEffect(()=>{
+      });
+      const data = response.data;
+      console.log(data);
+      setPaymentData(data);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPaymentHistory();
-  },[selectedYear])
+  }, [selectedYear]);
+
+  // Current month calculations
+  const currentMonthTransactions = paymentData?.currentTransaction?.transactions || [];
+  const currentMonthTotals = calculateMonthTotals(currentMonthTransactions);
+  const currentMonthTotal = (paymentData?.baseSalary || 0) + currentMonthTotals.overtime - currentMonthTotals.deduction - currentMonthTotals.advance;
 
   return (
     <SafeAreaView style={styles.mainContainer}>
@@ -95,23 +84,23 @@ function Payment() {
           <View style={styles.detailsContainer}>
             <View style={styles.detailItem}>
               <Text style={styles.detailText}>Base Salary :</Text>
-              <Text style={styles.detailAmount}>$5000</Text>
+              <Text style={styles.detailAmount}>Rs {paymentData?.baseSalary || 0}</Text>
             </View>
             <View style={styles.detailItem}>
               <Text style={styles.detailText}>OverTime :</Text>
-              <Text style={styles.detailAmount}>+ $500</Text>
+              <Text style={styles.detailAmount}>+ Rs {currentMonthTotals.overtime}</Text>
             </View>
             <View style={styles.detailItem}>
               <Text style={styles.detailText}>Deduction :</Text>
-              <Text style={styles.detailAmount}>- $200</Text>
+              <Text style={styles.detailAmount}>- Rs {currentMonthTotals.deduction}</Text>
             </View>
             <View style={styles.detailItem}>
               <Text style={styles.detailText}>Advance Payment :</Text>
-              <Text style={styles.detailAmount}>- $200</Text>
+              <Text style={styles.detailAmount}>- Rs {currentMonthTotals.advance}</Text>
             </View>
             <View style={[styles.detailItem,{borderTopWidth: 1, borderTopColor: '#ccc',paddingTop:10, marginTop:10}]}>
               <Text style={styles.detailText}>Total :</Text>
-              <Text style={styles.detailAmount}>$5300</Text>
+              <Text style={styles.detailAmount}>Rs {currentMonthTotal}</Text>
             </View>
 
             <View style={styles.alert}>
@@ -140,18 +129,18 @@ function Payment() {
 
             {open && (
               <View style={styles.dropdownList}>
-              {years.map(item => (
-                    <TouchableOpacity
-                      key={item}
-                      style={styles.dropdownItem}
-                      onPress={() => {
-                        setSelectedYear(item)
-                        setOpen(false)
-                      }}
-                    >
-                      <Text style={styles.dropdownItemText}>{item}</Text>
-                    </TouchableOpacity>
-            ))}
+                {years.map(item => (
+                  <TouchableOpacity
+                    key={item}
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setSelectedYear(item)
+                      setOpen(false)
+                    }}
+                  >
+                    <Text style={styles.dropdownItemText}>{item}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             )}
           </View>
@@ -160,53 +149,74 @@ function Payment() {
             Showing payments of {selectedYear}
           </Text>
 
-          {salaryHistory.filter(h => h.year === selectedYear).map(item => {
-            const isOpen = expanded === item.id;
-            return (
-              <View style={styles.historyCard} key={item.id}>
-                <TouchableOpacity 
-                  style={styles.historyCardHeader}
-                  onPress={() => setExpanded(isOpen ? null : item.id)}
-                >
-                  <Text style={styles.historyCardTitle}>{item.month} {item.year}</Text>
-                  <Text style={[styles.status, {color: item.status === "Paid" ? "#4dff91" : "#ffcc00"}]}>
-                    {item.status}
-                  </Text>
-                  <Text style={styles.historyCardAmount}>${item.total}</Text>
-                  <MaterialCommunityIcons 
-                    name={isOpen ? "chevron-up" : "chevron-down"} 
-                    size={20} 
-                    color="#fff" 
-                  />
-                </TouchableOpacity>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+          ) : (
+            <>
+              {paymentData?.previousTransaction && paymentData.previousTransaction.length > 0 ? (
+                paymentData.previousTransaction.map((monthData, index) => {
+                  const monthTotals = calculateMonthTotals(monthData.transactions);
+                  const monthTotal = monthData.baseSalary + monthTotals.overtime - monthTotals.deduction - monthTotals.advance;
+                  const status = getPaymentStatus(monthData.transactions, monthData.baseSalary);
+                  const itemId = `Rs {monthData.month}-Rs {selectedYear}-Rs {index}`;
+                  const isOpen = expanded === itemId;
 
-                {isOpen && (
-                  <View style={styles.historyCardDetails}>
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailText}>Base Salary :</Text>
-                      <Text style={styles.detailAmount}>${item.baseSalary}</Text>
+                  return (
+                    <View style={styles.historyCard} key={itemId}>
+                      <TouchableOpacity 
+                        style={styles.historyCardHeader}
+                        onPress={() => setExpanded(isOpen ? null : itemId)}
+                      >
+                        <Text style={styles.historyCardTitle}>{monthData.month} {selectedYear}</Text>
+                        <Text style={[styles.status, {color: status === "Paid" ? "#4dff91" : "#ffcc00"}]}>
+                          {status}
+                        </Text>
+                        <Text style={styles.historyCardAmount}>Rs{monthTotal}</Text>
+                        <MaterialCommunityIcons 
+                          name={isOpen ? "chevron-up" : "chevron-down"} 
+                          size={20} 
+                          color="#fff" 
+                        />
+                      </TouchableOpacity>
+
+                      {isOpen && (
+                        <View style={styles.historyCardDetails}>
+                          <View style={styles.detailItem}>
+                            <Text style={styles.detailText}>Base Salary :</Text>
+                            <Text style={styles.detailAmount}>Rs {monthData.baseSalary}</Text>
+                          </View>
+                          <View style={styles.detailItem}>
+                            <Text style={styles.detailText}>OverTime :</Text>
+                            <Text style={styles.detailAmount}>+ Rs {monthTotals.overtime}</Text>
+                          </View>
+                          <View style={styles.detailItem}>
+                            <Text style={styles.detailText}>Deduction :</Text>
+                            <Text style={styles.detailAmount}>- Rs {monthTotals.deduction}</Text>
+                          </View>
+                          <View style={styles.detailItem}>
+                            <Text style={styles.detailText}>Advance Payment :</Text>
+                            <Text style={styles.detailAmount}>- Rs {monthTotals.advance}</Text>
+                          </View>
+                          <View style={[styles.detailItem,{borderTopWidth: 1, borderTopColor: '#ccc',paddingTop:10, marginTop:10}]}>
+                            <Text style={styles.detailText}>Total :</Text>
+                            <Text style={styles.detailAmount}>Rs {monthTotal}</Text>
+                          </View>
+                        </View>
+                      )}
                     </View>
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailText}>OverTime :</Text>
-                      <Text style={styles.detailAmount}>+ ${item.overtime}</Text>
-                    </View>
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailText}>Deduction :</Text>
-                      <Text style={styles.detailAmount}>- ${item.deduction}</Text>
-                    </View>
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailText}>Advance Payment :</Text>
-                      <Text style={styles.detailAmount}>- ${item.advance}</Text>
-                    </View>
-                    <View style={[styles.detailItem,{borderTopWidth: 1, borderTopColor: '#ccc',paddingTop:10, marginTop:10}]}>
-                      <Text style={styles.detailText}>Total :</Text>
-                      <Text style={styles.detailAmount}>${item.total}</Text>
-                    </View>
-                  </View>
-                )}
-              </View>
-            )
-          })}
+                  );
+                })
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <MaterialCommunityIcons name="calendar-blank-outline" size={48} color="#666" />
+                  <Text style={styles.emptyText}>No payment history found for {selectedYear}</Text>
+                  <Text style={styles.emptySubText}>Payment records will appear here once transactions are made.</Text>
+                </View>
+              )}
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -353,5 +363,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingBottom: 14,
     gap: 10,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    color: '#ccc',
+    fontSize: 16,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+    gap: 10,
+  },
+  emptyText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  emptySubText: {
+    color: '#ccc',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 5,
   }
 })

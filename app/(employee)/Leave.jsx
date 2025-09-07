@@ -1,6 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useState } from 'react';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -13,36 +14,13 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const holidaysData = [
-  {
-    month: "August 2025",
-    holidays: [
-      { date: "09", name: "Independence Day" },
-      { date: "15", name: "Labor Day" },
-    ],
-  },
-  {
-    month: "September 2025",
-    holidays: [
-      { date: "05", name: "Teacher's Day" },
-      { date: "10", name: "Ganesh Chaturthi" },
-      { date: "28", name: "Community Festival" },
-    ],
-  },
-  {
-    month: "October 2025",
-    holidays: [
-      { date: "02", name: "Gandhi Jayanti" },
-      { date: "20", name: "Dussehra" },
-      { date: "31", name: "Halloween" },
-    ],
-  },
-];
+import { getToken } from '../../services/ApiService';
 
 function Leave() {
   const [modalVisible, setModalVisible] = useState(false);
   const [isLeave, setIsLeave] = useState(true);
+  const [holidaysData, setHolidaysData] = useState([]);
+  const [isLoadingHolidays, setIsLoadingHolidays] = useState(false);
   const [leaveHistory, setLeaveHistory] = useState([
     { id: '1', startDate: '2025-01-15', endDate: '2025-01-15', type: 'Paid', status: 'Approved', description: 'Personal work' },
     { id: '2', startDate: '2025-03-22', endDate: '2025-03-23', type: 'Paid', status: 'Approved', description: 'Family emergency' },
@@ -58,6 +36,39 @@ function Leave() {
   const [description, setDescription] = useState('');
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+
+  const fetchHolidays = async () => {
+    try {
+      setIsLoadingHolidays(true);
+      const response = await axios.get(`http://10.0.2.2:5000/api/holidays/getAll`, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+      
+      // Transform the response to match the frontend format
+      const currentYear = new Date().getFullYear();
+      const transformedHolidays = response.data.map(monthItem => ({
+        month: `${monthItem.month} ${currentYear}`,
+        holidays: monthItem.holidays.map(holiday => ({
+          date: new Date(holiday.date).getDate().toString().padStart(2, "0"),
+          name: holiday.description
+        }))
+      }));
+      
+      setHolidaysData(transformedHolidays);
+    } catch (error) {
+      console.error('Error fetching holidays:', error);
+      // Keep default empty array if API fails
+      setHolidaysData([]);
+    } finally {
+      setIsLoadingHolidays(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHolidays();
+  }, []);
 
   const applyLeave = () => {
     if (!startDate || !endDate || !description.trim()) {
@@ -246,21 +257,33 @@ function Leave() {
             </View>
           ) : (
             <View style={styles.holidaysContainer}>
-              {holidaysData.map((monthItem, index) => (
-                <View key={index} style={styles.holidayMonthCard}>
-                  <Text style={styles.holidayMonthTitle}>{monthItem.month}</Text>
-                  <View style={styles.holidayGrid}>
-                    {monthItem.holidays.map((holiday, idx) => (
-                      <View key={idx} style={styles.holidayCard}>
-                        <View style={styles.holidayDateContainer}>
-                          <Text style={styles.holidayDate}>{holiday.date}</Text>
-                        </View>
-                        <Text style={styles.holidayName}>{holiday.name}</Text>
-                      </View>
-                    ))}
-                  </View>
+              {isLoadingHolidays ? (
+                <View style={styles.loadingContainer}>
+                  <MaterialCommunityIcons name="loading" size={32} color="#1e90ff" />
+                  <Text style={styles.loadingText}>Loading holidays...</Text>
                 </View>
-              ))}
+              ) : holidaysData.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <MaterialCommunityIcons name="calendar-remove" size={48} color="#8a9ba8" />
+                  <Text style={styles.emptyText}>No holidays available</Text>
+                </View>
+              ) : (
+                holidaysData.map((monthItem, index) => (
+                  <View key={index} style={styles.holidayMonthCard}>
+                    <Text style={styles.holidayMonthTitle}>{monthItem.month}</Text>
+                    <View style={styles.holidayGrid}>
+                      {monthItem.holidays.map((holiday, idx) => (
+                        <View key={idx} style={styles.holidayCard}>
+                          <View style={styles.holidayDateContainer}>
+                            <Text style={styles.holidayDate}>{holiday.date}</Text>
+                          </View>
+                          <Text style={styles.holidayName}>{holiday.name}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ))
+              )}
             </View>
           )}
         </View>
@@ -610,6 +633,26 @@ const styles = StyleSheet.create({
   },
   holidaysContainer: {
     gap: 16,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    gap: 12,
+  },
+  loadingText: {
+    color: '#8a9ba8',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    gap: 12,
+  },
+  emptyText: {
+    color: '#8a9ba8',
+    fontSize: 16,
+    fontWeight: '500',
   },
   holidayMonthCard: {
     backgroundColor: '#1a2332',
