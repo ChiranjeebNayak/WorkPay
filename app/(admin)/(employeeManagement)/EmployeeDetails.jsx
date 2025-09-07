@@ -14,6 +14,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getToken } from '../../../services/ApiService';
+import {
+  calculateTotalHours,
+  calculateTotalOvertime,
+  convertOvertime,
+  countAbsentDays,
+  countPresentDays,
+  formatDay,
+  formatTime,
+  getTotalDaysInMonth
+} from "../../../utils/TimeUtils";
 
 const months = [
   { number: 1, name: "January" },
@@ -29,6 +39,8 @@ const months = [
   { number: 11, name: "November" },
   { number: 12, name: "December" },
 ];
+
+
 
 function EmployeeDetails() {
   const router = useRouter();
@@ -46,6 +58,7 @@ function EmployeeDetails() {
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('attendance'); // attendance, payment, leave
   const [employee, setEmployee] = useState(null);
+  const [attendanceData,setAttendanceData] = useState([])
 
     const fetchEmployeeDetails = async () => {
     try {
@@ -60,48 +73,35 @@ function EmployeeDetails() {
     }
   }
 
+    const fetchAttendanceData = async () => {
+    try{
+      const response = await axios.get(`http://10.0.2.2:5000/api/attendances/getEmployeeAttendance?empId=${id}&month=${currentMonth}&year=${currentYear}`
+        ,{
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+        }
+      }
+      );
+      const data = response.data;
+      setAttendanceData(data);
+    }catch(error){
+      console.error("Error fetching attendance data:", error);
+    }
+  };
+
   // Sample employee data - replace with API call
   useEffect(() => {
-    fetchEmployeeDetails()
+    fetchEmployeeDetails();
   }, [id]);
 
+  useEffect(()=>{
+ fetchAttendanceData()
+  },[currentMonth,currentYear])
 
 
-  // Sample attendance data
-  const attendanceData = [
-    {
-      day: "1 August",
-      checkIn: "09:02 AM",
-      checkOut: "06:15 PM",
-      status: "Present",
-      totalHours: "9h 13m",
-      overtime: "1.0h",
-    },
-    {
-      day: "2 August",
-      checkIn: "08:56 AM",
-      checkOut: "06:05 PM",
-      status: "Present",
-      totalHours: "9h 09m",
-      overtime: "0.5h",
-    },
-    {
-      day: "3 August",
-      checkIn: "—",
-      checkOut: "—",
-      status: "Absent",
-      totalHours: "0h",
-      overtime: "0h",
-    },
-    {
-      day: "4 August",
-      checkIn: "09:10 AM",
-      checkOut: "06:45 PM",
-      status: "Present",
-      totalHours: "9h 35m",
-      overtime: "1.5h",
-    },
-  ];
+
+
+  
 
   // Sample payment history (sorted by recent first)
   const paymentHistory = [
@@ -236,9 +236,9 @@ function EmployeeDetails() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Present': return '#7ED321';
-      case 'Absent': return '#D0021B';
-      case 'Late': return '#F5A623';
+      case 'PRESENT': return '#7ED321';
+      case 'ABSENT': return '#D0021B';
+      case 'LATE': return '#F5A623';
       case 'Approved': return '#7ED321';
       case 'Pending': return '#F5A623';
       case 'Rejected': return '#D0021B';
@@ -250,7 +250,7 @@ function EmployeeDetails() {
   const renderAttendanceCard = ({ item }) => (
     <View style={styles.dataCard}>
       <View style={styles.cardHeader}>
-        <Text style={styles.dayText}>{item.day}</Text>
+        <Text style={styles.dayText}>{formatDay(item.date)}</Text>
         <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20` }]}>
           <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
             {item.status}
@@ -263,23 +263,23 @@ function EmployeeDetails() {
           <View style={styles.timeItem}>
             <Feather name="log-in" size={16} color="#8A9BAE" />
             <Text style={styles.timeLabel}>Check In</Text>
-            <Text style={styles.timeValue}>{item.checkIn}</Text>
+            <Text style={styles.timeValue}>{formatTime(item.checkInTime)}</Text>
           </View>
           <View style={styles.timeItem}>
             <Feather name="log-out" size={16} color="#8A9BAE" />
             <Text style={styles.timeLabel}>Check Out</Text>
-            <Text style={styles.timeValue}>{item.checkOut}</Text>
+            <Text style={styles.timeValue}>{formatTime(item.checkOutTime)}</Text>
           </View>
         </View>
         
         <View style={styles.hoursRow}>
           <View style={styles.hoursItem}>
             <Text style={styles.hoursLabel}>Total Hours</Text>
-            <Text style={styles.hoursValue}>{item.totalHours}</Text>
+            <Text style={styles.hoursValue}>{calculateTotalHours(item.checkInTime, item.checkOutTime)}</Text>
           </View>
           <View style={styles.hoursItem}>
             <Text style={styles.hoursLabel}>Overtime</Text>
-            <Text style={[styles.hoursValue, { color: '#F5A623' }]}>{item.overtime}</Text>
+            <Text style={[styles.hoursValue, { color: '#F5A623' }]}>{convertOvertime(item.overtime)}</Text>
           </View>
         </View>
       </View>
@@ -505,7 +505,7 @@ function EmployeeDetails() {
       <View style={styles.contentContainer}>
         {activeTab === 'attendance' && (
           <FlatList
-            data={attendanceData}
+            data={attendanceData?.attendanceRecords}
             keyExtractor={(item, index) => index.toString()}
             contentContainerStyle={styles.listContent}
             ListHeaderComponent={
@@ -513,19 +513,19 @@ function EmployeeDetails() {
                 <Text style={styles.summaryTitle}>Monthly Summary</Text>
                 <View style={styles.summaryGrid}>
                   <View style={styles.summaryItem}>
-                    <Text style={styles.summaryValue}>22</Text>
+                    <Text style={styles.summaryValue}>{getTotalDaysInMonth(currentMonth, currentYear)}</Text>
                     <Text style={styles.summaryLabel}>Working Days</Text>
                   </View>
                   <View style={styles.summaryItem}>
-                    <Text style={[styles.summaryValue, { color: '#7ED321' }]}>20</Text>
+                    <Text style={[styles.summaryValue, { color: '#7ED321' }]}>{countPresentDays(attendanceData?.attendanceRecords)}</Text>
                     <Text style={styles.summaryLabel}>Present</Text>
                   </View>
                   <View style={styles.summaryItem}>
-                    <Text style={[styles.summaryValue, { color: '#D0021B' }]}>2</Text>
+                    <Text style={[styles.summaryValue, { color: '#D0021B' }]}>{countAbsentDays(attendanceData?.attendanceRecords)}</Text>
                     <Text style={styles.summaryLabel}>Absent</Text>
                   </View>
                   <View style={styles.summaryItem}>
-                    <Text style={[styles.summaryValue, { color: '#F5A623' }]}>8.5h</Text>
+                    <Text style={[styles.summaryValue, { color: '#F5A623' }]}>{calculateTotalOvertime(attendanceData?.attendanceRecords)}</Text>
                     <Text style={styles.summaryLabel}>Overtime</Text>
                   </View>
                 </View>

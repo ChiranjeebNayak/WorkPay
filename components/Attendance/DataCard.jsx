@@ -1,62 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
+import { calculateTotalHours, convertOvertime, formatDay, formatTime } from "../../utils/TimeUtils";
 
 
-const months = [
-  { number: 1, name: "January" },
-  { number: 2, name: "February" },
-  { number: 3, name: "March" },
-  { number: 4, name: "April" },
-  { number: 5, name: "May" },
-  { number: 6, name: "June" },
-  { number: 7, name: "July" },
-  { number: 8, name: "August" },
-  { number: 9, name: "September" },
-  { number: 10, name: "October" },
-  { number: 11, name: "November" },
-  { number: 12, name: "December" },
-];
 
-function formatDay(dateString) {
-  const date = new Date(dateString);
-  const day = date.getDate();
-  const month = months[date.getMonth()].name;
-  return `${day} ${month}`;
-}
 
-function formatTime(dateString) {
-  if (!dateString) return "—";
-
-  // Remove Z so JS doesn’t convert
-  const localString = dateString.replace("Z", "");
-  const date = new Date(localString);
-
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-
-  let h = hours % 12 || 12;
-  let m = minutes.toString().padStart(2, "0");
-  const ampm = hours < 12 ? "AM" : "PM";
-
-  return `${h}:${m} ${ampm}`;
-}
-
-function calculateTotalHours(checkIn, checkOut) {
-  if (!checkIn || !checkOut) return "0h";
-  const start = new Date(checkIn);
-  const end = new Date(checkOut);
-  const diffMs = end - start;
-  if (diffMs <= 0) return "0h";
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  return `${hours}h ${minutes}m`;
-}
-
-function convertOvertime(minutes) {
-  if (!minutes || minutes === 0) return "0h";
-  const hrs = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
-}
 
 function DataCard({ data }) {
 

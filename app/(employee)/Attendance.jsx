@@ -5,6 +5,7 @@ import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native
 import { SafeAreaView } from "react-native-safe-area-context";
 import DataCard from "../../components/Attendance/DataCard";
 import { getToken } from "../../services/ApiService";
+import { calculateTotalOvertime, countAbsentDays, countPresentDays, getTotalDaysInMonth } from "../../utils/TimeUtils";
 
 const months = [
   { number: 1, name: "January" },
@@ -22,17 +23,7 @@ const months = [
 ];
 
 
-const countPresentDays = (data) => {
-  return data.filter(item => item.status === "PRESENT" || item.status === "LATE").length;
-};
 
-const countAbsentDays = (data) => {
-  return data.filter(item => item.status === "ABSENT").length;
-};
-
-const calculateTotalOvertime = (data) => {
-  return data.reduce((total, item) => total + (item.overTime), 0) / 60;
-}
 
 function Attendance() {
   // Get today's month/year
@@ -45,9 +36,6 @@ function Attendance() {
   const [currentYear, setCurrentYear] = useState(thisYear);
   const [attendanceData, setAttendanceData] = useState([]);
 
-  const getTotalDaysInMonth = (month, year) => {
-  return new Date(year, month, 0).getDate();
-};
 
 
 
