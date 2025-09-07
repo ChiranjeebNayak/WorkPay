@@ -1,20 +1,22 @@
-import React, { useState, useEffect } from 'react'
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TouchableOpacity, 
-  FlatList, 
-  Modal,
-  TextInput,
+import Feather from '@expo/vector-icons/Feather'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import axios from 'axios'
+import { useRouter } from 'expo-router'
+import { useEffect, useState } from 'react'
+import {
   Alert,
-  StatusBar
+  FlatList,
+  Modal,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import Feather from '@expo/vector-icons/Feather'
-import { useRouter } from 'expo-router'
+import { getToken } from "../../services/ApiService"
 
 function AdminSalaryManagement() {
   const router = useRouter()
@@ -31,11 +33,30 @@ function AdminSalaryManagement() {
   const [advanceAmount, setAdvanceAmount] = useState('')
   const [processingAdvance, setProcessingAdvance] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
-  const [selectedYear, setSelectedYear] = useState(currentYear)
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+
+
+   const fetchPaymentHistory = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`http://10.0.2.2:5000/api/transactions/monthly-transactions?year=${selectedYear}&month=${selectedMonth}`, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`,
+        }
+      });
+      const data = response.data;
+      console.log(data.payments[0]);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Sample data - replace with API calls
   useEffect(() => {
-    loadSalaryData()
+    loadSalaryData();
+    fetchPaymentHistory();
   }, [selectedMonth, selectedYear])
 
   const loadSalaryData = async () => {

@@ -3,6 +3,7 @@ import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { getToken } from '../../services/ApiService'
 
 const months = [
   "January", "February", "March", "April", "May", "June",
@@ -42,13 +43,12 @@ function Payment() {
   const fetchPaymentHistory = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://10.0.2.2:5000/api/transactions/employee?year=Rs{selectedYear}`, {
+      const response = await axios.get(`http://10.0.2.2:5000/api/transactions/employee?year=${selectedYear}`, {
         headers: {
-          authorization: `Bearer Rs{await getToken()}`,
+          authorization: `Bearer ${await getToken()}`,
         }
       });
       const data = response.data;
-      console.log(data);
       setPaymentData(data);
     } catch (err) {
       console.log(err);
