@@ -15,27 +15,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getToken } from '../../services/ApiService';
+import { formatDay } from "../../utils/TimeUtils";
 
 function Leave() {
   const [modalVisible, setModalVisible] = useState(false);
   const [isLeave, setIsLeave] = useState(true);
   const [holidaysData, setHolidaysData] = useState([]);
   const [isLoadingHolidays, setIsLoadingHolidays] = useState(false);
-  const [leaveHistory, setLeaveHistory] = useState([
-    { id: '1', startDate: '2025-01-15', endDate: '2025-01-15', type: 'Paid', status: 'Approved', description: 'Personal work' },
-    { id: '2', startDate: '2025-03-22', endDate: '2025-03-23', type: 'Paid', status: 'Approved', description: 'Family emergency' },
-    { id: '3', startDate: '2025-06-10', endDate: '2025-06-11', type: 'Unpaid', status: 'Pending', description: 'Medical appointment' },
-    { id: '4', startDate: '2025-07-05', endDate: '2025-07-06', type: 'Paid', status: 'Rejected', description: 'Vacation' },
-    { id: '5', startDate: '2025-08-18', endDate: '2025-08-19', type: 'Paid', status: 'Approved', description: 'Wedding ceremony' },
-    { id: '6', startDate: '2025-09-10', endDate: '2025-09-11', type: 'Unpaid', status: 'Pending', description: 'Personal matter' },
-    { id: '7', startDate: '2025-10-12', endDate: '2025-10-13', type: 'Paid', status: 'Approved', description: 'Home renovation' },
-    { id: '8', startDate: '2025-11-15', endDate: '2025-11-15', type: 'Unpaid', status: 'Pending', description: 'Health checkup' },
-  ]);
+  const [leaveHistory, setLeaveHistory] = useState([]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [description, setDescription] = useState('');
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const currentYear = new Date().getFullYear();
 
   const fetchHolidays = async () => {
     try {
@@ -47,7 +40,7 @@ function Leave() {
       });
       
       // Transform the response to match the frontend format
-      const currentYear = new Date().getFullYear();
+      
       const transformedHolidays = response.data.map(monthItem => ({
         month: `${monthItem.month} ${currentYear}`,
         holidays: monthItem.holidays.map(holiday => ({
@@ -66,61 +59,76 @@ function Leave() {
     }
   };
 
+  const fetchLeavesHistory = async ()=>{
+    try{
+       const response = await axios.get(`http://10.0.2.2:5000/api/leaves/employee-leaves?year=${currentYear}`, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+      console.log(response.data.leaves)
+      setLeaveHistory(response.data.leaves)
+    }catch(error){
+       console.error('Error fetching Leaves History:', error);
+    }
+  }
+
   useEffect(() => {
     fetchHolidays();
+    fetchLeavesHistory();
   }, []);
 
-  const applyLeave = () => {
+  const applyLeave = async () => {
     if (!startDate || !endDate || !description.trim()) {
       Alert.alert('Missing Information', 'Please fill in all fields');
       return;
     }
     
-    const newLeave = {
-      id: Math.random().toString(),
-      startDate: startDate,
-      endDate: endDate,
-      type: leaveHistory.length >= 10 ? 'Unpaid' : 'Paid',
-      status: 'Pending',
-      description: description.trim()
-    };
-    
-    setLeaveHistory([newLeave, ...leaveHistory]);
+  try{
+       const response = await axios.post(`http://10.0.2.2:5000/api/leaves/apply`,{
+        reason:description,
+        startDate:startDate,
+        endDate:endDate
+       }, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`,
+        }
+      });
+      console.log(response.data)
+      if(response.data.message){
     setStartDate('');
     setEndDate('');
     setDescription('');
     setModalVisible(false);
     Alert.alert('Success', 'Leave application submitted successfully');
+      }
+    }catch(error){
+       console.error('Error Applying leave:', error);
+    }
+    
+   
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Approved': return '#00E676';
-      case 'Pending': return '#FF9800';
-      case 'Rejected': return '#FF5252';
+      case 'APPROVED': return '#00E676';
+      case 'PENDING': return '#FF9800';
+      case 'REJECTED': return '#FF5252';
       default: return '#888';
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Approved': return 'check-circle';
-      case 'Pending': return 'clock-outline';
-      case 'Rejected': return 'close-circle';
+      case 'APPROVED': return 'check-circle';
+      case 'PENDING': return 'clock-outline';
+      case 'REJECTED': return 'close-circle';
       default: return 'help-circle';
     }
   };
 
   const getTypeColor = (type) => {
-    return type === 'Paid' ? '#1e90ff' : '#ff6b35';
-  };
-
-  const calculateDays = (start, end) => {
-    const startDateObj = new Date(start);
-    const endDateObj = new Date(end);
-    const diffTime = Math.abs(endDateObj - startDateObj);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return diffDays;
+    return type === 'PAID' ? '#1e90ff' : '#ff6b35';
   };
 
   return (
@@ -209,7 +217,8 @@ function Leave() {
 
           {isLeave ? (
             <View style={styles.historyContainer}>
-              {leaveHistory.map((item) => (
+              {leaveHistory.length > 0 ?
+              leaveHistory?.map((item) => (
                 <View key={item.id} style={styles.leaveCard}>
                   <View style={styles.leaveCardHeader}>
                     <View style={styles.leaveCardLeft}>
@@ -219,15 +228,15 @@ function Leave() {
                         color="#1e90ff" 
                       />
                       <View>
-                        {item.startDate === item.endDate ? (
-                          <Text style={styles.leaveDateText}>{item.startDate}</Text>
+                        {item.fromDate === item.toDate ? (
+                          <Text style={styles.leaveDateText}>{item?.fromDate}</Text>
                         ) : (
                           <Text style={styles.leaveDateText}>
-                            {item.startDate} - {item.endDate}
+                            {formatDay(item.fromDate)} - {formatDay(item.toDate)}
                           </Text>
                         )}
                         <Text style={styles.leaveDaysText}>
-                          {calculateDays(item.startDate, item.endDate)} day(s)
+                          {item.totalDays} day(s)
                         </Text>
                       </View>
                     </View>
@@ -238,7 +247,7 @@ function Leave() {
                     </View>
                   </View>
                   
-                  <Text style={styles.leaveDescription}>{item.description}</Text>
+                  <Text style={styles.leaveDescription}>{item.reason}</Text>
                   
                   <View style={styles.leaveCardFooter}>
                     <View style={styles.statusContainer}>
@@ -253,7 +262,13 @@ function Leave() {
                     </View>
                   </View>
                 </View>
-              ))}
+              ))
+            :
+            (<View style={styles.emptyContainer}>
+                  <MaterialCommunityIcons name="calendar-remove" size={48} color="#8a9ba8" />
+                  <Text style={styles.emptyText}>No Leaves available</Text>
+                </View>)
+            }
             </View>
           ) : (
             <View style={styles.holidaysContainer}>
