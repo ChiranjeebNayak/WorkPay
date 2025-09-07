@@ -50,13 +50,8 @@ function Profile() {
                }
              }
       )
-      console.log(response.data)
-    }catch(error){
-       console.error('Error Updating Password:', error);
-    }
-
-    // Here you would typically validate old password and update
-    Alert.alert("Success", "Password updated successfully", [
+      if(response.data.message){
+       Alert.alert("Success", "Password updated successfully", [
       {
         text: "OK",
         onPress: () => {
@@ -67,6 +62,13 @@ function Profile() {
         }
       }
     ]);
+  }
+    }catch(error){
+       console.error('Error Updating Password:', error);
+    }
+
+    // Here you would typically validate old password and update
+   
   };
 
   const cancelPasswordUpdate = () => {
