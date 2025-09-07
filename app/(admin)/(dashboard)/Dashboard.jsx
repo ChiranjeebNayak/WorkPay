@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getToken, removeToken } from '../../../services/ApiService';
+import { formatDay } from "../../../utils/TimeUtils";
 
 function Dashboard() {
   const router = useRouter();
@@ -22,11 +23,14 @@ function Dashboard() {
       });
       const data = response.data;
       setData(data);
+      console.log(data.pendingLeaves)
     } catch (error) {
       console.error('Error fetching dashboard details:', error);
       return null;
     }
   }
+
+
 
   useEffect(() => {
     dashboardDetails();
@@ -38,22 +42,6 @@ function Dashboard() {
     { icon: 'user-check', iconSet: 'Feather', color: '#00D4AA', label: 'Present Today',field:"totalPresent" },
     { icon: 'user-x', iconSet: 'Feather', color: '#FF6B6B', label: 'Absent Today',field:"totalAbsent" },
     { icon: 'timer-outline', iconSet: 'Ionicons', color: '#FFB800', label: 'Late Arrivals',field:"totalLate" },
-  ];
-
-  // Sample absent employees data
-  const absentEmployees = [
-    { name: 'User D', reason: 'Sick Leave', date: 'Today' },
-    { name: 'User E', reason: 'Personal Leave', date: 'Today' },
-    { name: 'User F', reason: 'Medical Leave', date: 'Today' },
-    { name: 'User G', reason: 'Emergency Leave', date: 'Today' },
-  ];
-
-  // Sample leave requests data
-  const leaveRequests = [
-    { name: 'John Smith', leaveType: 'Annual Leave', dates: '5-8 Sep 2025', status: 'pending' },
-    { name: 'Sarah Johnson', leaveType: 'Sick Leave', dates: '3-4 Sep 2025', status: 'pending' },
-    { name: 'Mike Wilson', leaveType: 'Personal Leave', dates: '10-12 Sep 2025', status: 'pending' },
-    { name: 'Emma Davis', leaveType: 'Maternity Leave', dates: '15 Sep - 15 Dec 2025', status: 'pending' },
   ];
 
   const renderIcon = (iconName, iconSet, color, size = 28) => {
@@ -109,14 +97,14 @@ function Dashboard() {
         </View>
 
         {/* Absent List */}
-        <View style={styles.sectionContainer}>
+       {data?.absentList.length > 0 && <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Absent Today</Text>
           <View style={styles.recentActivityContainer}>
-            {absentEmployees.map((employee, index) => (
+            {data?.absentList.map((employee, index) => (
               <View key={index} style={styles.recentActivityItem}>
                 <View style={{gap:5}}>
-                  <Text style={{color:'#FFFFFF',fontSize:18}}>{employee.name}</Text>
-                  <Text style={{color:'#8A9BAE',fontSize:14}}>{employee.reason}</Text>
+                  <Text style={{color:'#FFFFFF',fontSize:18}}>{employee?.name}</Text>
+                  <Text style={{color:'#8A9BAE',fontSize:14}}>{employee?.id}</Text>
                 </View>
                 <View style={{paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:'#a51212ff',alignItems:'center',justifyContent:'center'}}>
                   <Text style={{color:'#ffffff',fontSize:14,fontWeight:'600'}}>Absent</Text>
@@ -124,7 +112,7 @@ function Dashboard() {
               </View>
             ))}
           </View>
-        </View>
+        </View>}
 
         {/* Leave Requests Section */}
         <View style={styles.sectionContainer}>
@@ -139,11 +127,11 @@ function Dashboard() {
             </TouchableOpacity>
           </View>
           <View style={styles.recentActivityContainer}>
-            {leaveRequests.slice(0, 3).map((request, index) => (
+            {data?.pendingLeaves.map((request, index) => (
               <View key={index} style={styles.recentActivityItem}>
                 <View style={{gap:5, flex: 1}}>
-                  <Text style={{color:'#FFFFFF',fontSize:18}}>{request.name}</Text>
-                  <Text style={{color:'#8A9BAE',fontSize:14}}>{request.leaveType} • {request.dates}</Text>
+                  <Text style={{color:'#FFFFFF',fontSize:18}}>{request.employee.name}</Text>
+                  <Text style={{color:'#8A9BAE',fontSize:14}}>{request.type} • {formatDay(request.fromDate) }- { formatDay(request.toDate)}</Text>
                 </View>
                 <View style={{paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:'#FFB800',alignItems:'center',justifyContent:'center'}}>
                   <Text style={{color:'#ffffff',fontSize:14,fontWeight:'600'}}>Pending</Text>
