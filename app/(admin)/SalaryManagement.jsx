@@ -34,6 +34,7 @@ function AdminSalaryManagement() {
   const [processingAdvance, setProcessingAdvance] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [paymentData,setPaymentData] = useState([])
 
 
    const fetchPaymentHistory = async () => {
@@ -45,7 +46,7 @@ function AdminSalaryManagement() {
         }
       });
       const data = response.data;
-      console.log(data.payments[0]);
+      setPaymentData(data.payments);
     } catch (err) {
       console.log(err);
     } finally {
@@ -57,7 +58,16 @@ function AdminSalaryManagement() {
   useEffect(() => {
     loadSalaryData();
     fetchPaymentHistory();
-  }, [selectedMonth, selectedYear])
+  }, [selectedMonth, selectedYear]);
+
+
+    const calculateMonthTotals = (transactions) => {
+    const overtime = transactions.reduce((acc, it) => acc + (it.payType === "OVERTIME" ? it.amount : 0), 0);
+    const deduction = transactions.reduce((acc, it) => acc + (it.payType === "DEDUCTION" ? it.amount : 0), 0);
+    const advance = transactions.reduce((acc, it) => acc + (it.payType === "ADVANCE" ? it.amount : 0), 0);
+    
+    return { overtime, deduction, advance };
+  };
 
   const loadSalaryData = async () => {
     setLoading(true)
@@ -259,13 +269,13 @@ function AdminSalaryManagement() {
         onPress={() => navigateToEmployeeDetails(item.id)}
       >
         <View style={styles.employeeAvatar}>
-          <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
+          <Text style={styles.avatarText}>{item?.name?.charAt(0).toUpperCase()}</Text>
         </View>
         <View style={styles.employeeBasicInfo}>
-          <Text style={styles.employeeName}>{item.name}</Text>
-          <Text style={styles.employeePhone}>{item.phone}</Text>
+          <Text style={styles.employeeName}>{item?.name}</Text>
+          <Text style={styles.employeePhone}>{item?.phone}</Text>
         </View>
-        <View style={styles.statusContainer}>
+        {/* <View style={styles.statusContainer}>
           <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20` }]}>
             <MaterialCommunityIcons 
               name={getStatusIcon(item.status)} 
@@ -276,51 +286,54 @@ function AdminSalaryManagement() {
               {item.status}
             </Text>
           </View>
-        </View>
+        </View> */}
       </TouchableOpacity>
 
       {/* Salary Breakdown */}
       <View style={styles.salaryBreakdown}>
         <View style={styles.salaryRow}>
           <Text style={styles.salaryLabel}>Base Salary</Text>
-          <Text style={styles.salaryAmount}>₹{item.baseSalary.toLocaleString()}</Text>
+          <Text style={styles.salaryAmount}>₹{item?.baseSalary?.toLocaleString()}</Text>
         </View>
         
         <View style={styles.salaryRow}>
-          <Text style={styles.salaryLabel}>Overtime ({item.overtimeHours}h)</Text>
+          <Text style={styles.salaryLabel}>Overtime ({item.t}h)</Text>
           <Text style={[styles.salaryAmount, { color: '#7ED321' }]}>
-            + ₹{item.overtimePay.toLocaleString()}
+            + ₹{calculateMonthTotals(item.transactions).overtime}
           </Text>
         </View>
         
-        {item.deductions > 0 && (
+       
           <View style={styles.salaryRow}>
             <Text style={styles.salaryLabel}>Deductions ({item.unpaidLeaveDays} unpaid days)</Text>
             <Text style={[styles.salaryAmount, { color: '#D0021B' }]}>
-              - ₹{item.deductions.toLocaleString()}
+              - ₹{calculateMonthTotals(item.transactions).deduction}
             </Text>
           </View>
-        )}
         
-        {item.advancePayment > 0 && (
+        
+        
           <View style={styles.salaryRow}>
             <Text style={styles.salaryLabel}>Advance Payment</Text>
             <Text style={[styles.salaryAmount, { color: '#D0021B' }]}>
-              - ₹{item.advancePayment.toLocaleString()}
+              - ₹{calculateMonthTotals(item.transactions).advance}
             </Text>
           </View>
-        )}
+        
         
         <View style={[styles.salaryRow, styles.finalSalaryRow]}>
           <Text style={styles.finalSalaryLabel}>Final Salary</Text>
-          <Text style={styles.finalSalaryAmount}>₹{item.finalSalary.toLocaleString()}</Text>
+          <Text style={styles.finalSalaryAmount}>₹{item.baseSalary + 
+          calculateMonthTotals(item.transactions).overtime - 
+          calculateMonthTotals(item.transactions).deduction - 
+          calculateMonthTotals(item.transactions).advance}</Text>
         </View>
       </View>
 
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
         {/* Current Month - Settle Salary */}
-        {item.status !== 'Paid' && isCurrentMonth() && (
+        {(item.transactions.filter(i=>i.payType === "SALARY").length === 0) && isCurrentMonth() && (
           <TouchableOpacity
             style={styles.settleButton}
             onPress={() => handleSettleSalary(item.id)}
@@ -433,7 +446,7 @@ function AdminSalaryManagement() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.monthStats}>
+        {/* <View style={styles.monthStats}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{employees.length}</Text>
             <Text style={styles.statLabel}>Employees</Text>
@@ -456,22 +469,22 @@ function AdminSalaryManagement() {
             </Text>
             <Text style={styles.statLabel}>Due</Text>
           </View>
-        </View>
+        </View> */}
 
         {/* Alert for overdue salaries */}
-        {employees.some(e => e.status === 'Due') && (
+        {/* {employees.some(e => e.status === 'Due') && (
           <View style={styles.overdueAlert}>
             <MaterialCommunityIcons name="alert-circle" size={20} color="#D0021B" />
             <Text style={styles.overdueAlertText}>
               {employees.filter(e => e.status === 'Due').length} employee(s) have overdue salary payments
             </Text>
           </View>
-        )}
+        )} */}
       </View>
 
       {/* Employee List */}
       <FlatList
-        data={employees}
+        data={paymentData}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         renderItem={renderEmployeeCard}
