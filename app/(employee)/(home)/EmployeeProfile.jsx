@@ -1,9 +1,11 @@
 import Feather from "@expo/vector-icons/Feather";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { getToken } from "../../../services/ApiService";
 
 // Dummy employee data
 
@@ -21,7 +23,7 @@ function Profile() {
    const { employee } = useLocalSearchParams();
   const employeeData = employee ? JSON.parse(employee) : null;
 
-  const handlePasswordUpdate = () => {
+  const handlePasswordUpdate = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
       Alert.alert("Error", "Please fill in all password fields");
       return;
@@ -35,6 +37,22 @@ function Profile() {
     if (newPassword.length < 6) {
       Alert.alert("Error", "New password must be at least 6 characters long");
       return;
+    }
+
+    try{
+        const response = await axios.post(`http://10.0.2.2:5000/api/employees/update-password`,{
+          currentPassword:oldPassword,
+          newPassword:newPassword
+        },
+       {
+               headers: {
+                 authorization: `Bearer ${await getToken()}`
+               }
+             }
+      )
+      console.log(response.data)
+    }catch(error){
+       console.error('Error Updating Password:', error);
     }
 
     // Here you would typically validate old password and update
