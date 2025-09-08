@@ -55,10 +55,13 @@ function EmployeeDetails() {
   const [currentMonth, setCurrentMonth] = useState(thisMonth);
   const [currentYear, setCurrentYear] = useState(thisYear);
   const [selectedPaymentYear, setSelectedPaymentYear] = useState(thisYear);
+  const [selectedLeaveYear, setSelectedLeaveYear] = useState(thisYear);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
+  const [leaveYearDropdownOpen, setLeaveYearDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('attendance'); // attendance, payment, leave
   const [employee, setEmployee] = useState(null);
-  const [attendanceData,setAttendanceData] = useState([])
+  const [attendanceData,setAttendanceData] = useState([]);
+  const [leavesData,setLeavesData] = useState([])
 
     const fetchEmployeeDetails = async () => {
     try {
@@ -99,7 +102,25 @@ function EmployeeDetails() {
   },[currentMonth,currentYear])
 
 
+const fetchLeavesData = async ()=>{
+  try{
+      const response = await axios.get(`http://10.0.2.2:5000/api/leaves/get/employee-leaves?empId=${id}&year=${selectedLeaveYear}`
+        ,{
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+        }
+      }
+      );
+      const data = response.data;
+      setLeavesData(data)
+    }catch(error){
+      console.error("Error fetching attendance data:", error);
+    }
+}
 
+useEffect(()=>{
+  fetchLeavesData();
+},[id,selectedLeaveYear])
 
   
 
@@ -206,11 +227,14 @@ function EmployeeDetails() {
   // Generate years for dropdown (current year and 4 previous years)
   const availableYears = Array.from({ length: 5 }, (_, i) => thisYear - i);
 
-  // Sample leave history
+  // Sample leave history with years
   const leaveHistory = [
-    { id: '1', startDate: '2025-01-15', endDate: '2025-01-15', type: 'Paid', status: 'Approved', reason: 'Personal' },
-    { id: '2', startDate: '2025-03-22', endDate: '2025-03-23', type: 'Paid', status: 'Approved', reason: 'Medical' },
-    { id: '3', startDate: '2025-06-10', endDate: '2025-06-11', type: 'Unpaid', status: 'Pending', reason: 'Family' },
+    { id: '1', startDate: '2025-01-15', endDate: '2025-01-15', type: 'Paid', status: 'Approved', reason: 'Personal', year: 2025 },
+    { id: '2', startDate: '2025-03-22', endDate: '2025-03-23', type: 'Paid', status: 'Approved', reason: 'Medical', year: 2025 },
+    { id: '3', startDate: '2025-06-10', endDate: '2025-06-11', type: 'Unpaid', status: 'Pending', reason: 'Family', year: 2025 },
+    { id: '4', startDate: '2024-12-20', endDate: '2024-12-22', type: 'Paid', status: 'Approved', reason: 'Holiday', year: 2024 },
+    { id: '5', startDate: '2024-08-15', endDate: '2024-08-15', type: 'Paid', status: 'Approved', reason: 'Personal', year: 2024 },
+    { id: '6', startDate: '2023-11-10', endDate: '2023-11-12', type: 'Unpaid', status: 'Approved', reason: 'Medical', year: 2023 },
   ];
 
   // Handle month navigation
@@ -239,10 +263,10 @@ function EmployeeDetails() {
       case 'PRESENT': return '#7ED321';
       case 'ABSENT': return '#D0021B';
       case 'LATE': return '#F5A623';
-      case 'Approved': return '#7ED321';
-      case 'Pending': return '#F5A623';
-      case 'Rejected': return '#D0021B';
-      case 'Paid': return '#7ED321';
+      case 'APPROVED': return '#7ED321';
+      case 'PENDING': return '#F5A623';
+      case 'REJECTED': return '#D0021B';
+      case 'PAID': return '#7ED321';
       default: return '#8A9BAE';
     }
   };
@@ -331,20 +355,20 @@ function EmployeeDetails() {
         <View style={styles.leaveDateContainer}>
           <MaterialCommunityIcons name="calendar-outline" size={20} color="#4A90E2" />
           <View style={styles.leaveDates}>
-            {item.startDate === item.endDate ? (
-              <Text style={styles.leaveDate}>Leave On: {item.startDate}</Text>
+            {item.fromDate === item.toDate ? (
+              <Text style={styles.leaveDate}>Leave On: {formatDay(item.fromDate)} {item.fromDate.split('-')[0]}</Text>
             ) : (
               <View>
-                <Text style={styles.leaveDate}>From: {item.startDate}</Text>
-                <Text style={styles.leaveDate}>To: {item.endDate}</Text>
+                <Text style={styles.leaveDate}>From: {formatDay(item.fromDate)} {item.fromDate.split('-')[0]}</Text>
+                <Text style={styles.leaveDate}>To: {formatDay(item.toDate)} {item.fromDate.split('-')[0]}</Text>
               </View>
             )}
           </View>
         </View>
         
         <View style={styles.leaveStatus}>
-          <View style={[styles.leaveTypeBadge, { backgroundColor: item.type === 'Paid' ? '#4A90E220' : '#F5A62320' }]}>
-            <Text style={[styles.leaveTypeText, { color: item.type === 'Paid' ? '#4A90E2' : '#F5A623' }]}>
+          <View style={[styles.leaveTypeBadge, { backgroundColor: item.type === 'PAID' ? '#4A90E220' : '#F5A62320' }]}>
+            <Text style={[styles.leaveTypeText, { color: item.type === 'PAID' ? '#4A90E2' : '#F5A623' }]}>
               {item.type}
             </Text>
           </View>
@@ -367,6 +391,9 @@ function EmployeeDetails() {
       </SafeAreaView>
     );
   }
+
+  // Get filtered leave data for selected year
+  const filteredLeaveHistory = leaveHistory.filter(leave => leave.year === selectedLeaveYear);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -391,7 +418,7 @@ function EmployeeDetails() {
           <Text style={styles.employeePhone}>{employee.phone}</Text>
           <Text style={styles.employeePhone}>{employee.email}</Text>
           <View style={styles.employeeMeta}>
-            <Text style={styles.employeeJoinDate}>Joined: {employee.joinDate}</Text>
+            <Text style={styles.employeeJoinDate}>Joined: {employee.joinedDate}</Text>
           </View>
           <View style={styles.salaryInfo}>
             <Text style={styles.salaryText}>Base: ₹{employee.baseSalary.toLocaleString()}</Text>
@@ -501,6 +528,41 @@ function EmployeeDetails() {
         </View>
       )}
 
+      {/* Year Selection (for leave only) */}
+      {activeTab === 'leave' && (
+        <View style={styles.yearContainer}>
+          <Text style={styles.yearLabel}>Leave History</Text>
+          <TouchableOpacity
+            style={styles.yearDropdownButton}
+            onPress={() => setLeaveYearDropdownOpen(!leaveYearDropdownOpen)}
+          >
+            <Text style={styles.yearDropdownText}>{selectedLeaveYear}</Text>
+            <MaterialCommunityIcons 
+              name={leaveYearDropdownOpen ? "chevron-up" : "chevron-down"} 
+              size={20} 
+              color="#fff" 
+            />
+          </TouchableOpacity>
+
+          {leaveYearDropdownOpen && (
+            <View style={styles.yearDropdownList}>
+              {availableYears.map(year => (
+                <TouchableOpacity
+                  key={year}
+                  style={styles.yearDropdownItem}
+                  onPress={() => {
+                    setSelectedLeaveYear(year);
+                    setLeaveYearDropdownOpen(false);
+                  }}
+                >
+                  <Text style={styles.yearDropdownItemText}>{year}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Content based on active tab */}
       <View style={styles.contentContainer}>
         {activeTab === 'attendance' && (
@@ -555,23 +617,23 @@ function EmployeeDetails() {
 
         {activeTab === 'leave' && (
           <FlatList
-            data={leaveHistory}
+            data={leavesData.leaves}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             ListHeaderComponent={
               <View style={styles.leaveSummaryCard}>
-                <Text style={styles.summaryTitle}>Leave Summary</Text>
+                <Text style={styles.summaryTitle}>Leave Summary ({selectedLeaveYear})</Text>
                 <View style={styles.leaveSummaryGrid}>
                   <View style={styles.leaveSummaryItem}>
-                    <Text style={styles.summaryValue}>10</Text>
+                    <Text style={styles.summaryValue}>{employee.leaveBalance + leavesData.leaves.filter((i)=>i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)}</Text>
                     <Text style={styles.summaryLabel}>Total Allocated</Text>
                   </View>
                   <View style={styles.leaveSummaryItem}>
-                    <Text style={[styles.summaryValue, { color: '#4A90E2' }]}>3</Text>
+                    <Text style={[styles.summaryValue, { color: '#4A90E2' }]}>{leavesData.leaves.filter((i)=>i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)}</Text>
                     <Text style={styles.summaryLabel}>Used</Text>
                   </View>
                   <View style={styles.leaveSummaryItem}>
-                    <Text style={[styles.summaryValue, { color: '#7ED321' }]}>7</Text>
+                    <Text style={[styles.summaryValue, { color: '#7ED321' }]}>{employee.leaveBalance}</Text>
                     <Text style={styles.summaryLabel}>Remaining</Text>
                   </View>
                 </View>
