@@ -227,15 +227,6 @@ useEffect(()=>{
   // Generate years for dropdown (current year and 4 previous years)
   const availableYears = Array.from({ length: 5 }, (_, i) => thisYear - i);
 
-  // Sample leave history with years
-  const leaveHistory = [
-    { id: '1', startDate: '2025-01-15', endDate: '2025-01-15', type: 'Paid', status: 'Approved', reason: 'Personal', year: 2025 },
-    { id: '2', startDate: '2025-03-22', endDate: '2025-03-23', type: 'Paid', status: 'Approved', reason: 'Medical', year: 2025 },
-    { id: '3', startDate: '2025-06-10', endDate: '2025-06-11', type: 'Unpaid', status: 'Pending', reason: 'Family', year: 2025 },
-    { id: '4', startDate: '2024-12-20', endDate: '2024-12-22', type: 'Paid', status: 'Approved', reason: 'Holiday', year: 2024 },
-    { id: '5', startDate: '2024-08-15', endDate: '2024-08-15', type: 'Paid', status: 'Approved', reason: 'Personal', year: 2024 },
-    { id: '6', startDate: '2023-11-10', endDate: '2023-11-12', type: 'Unpaid', status: 'Approved', reason: 'Medical', year: 2023 },
-  ];
 
   // Handle month navigation
   const handlePrev = () => {
@@ -392,8 +383,6 @@ useEffect(()=>{
     );
   }
 
-  // Get filtered leave data for selected year
-  const filteredLeaveHistory = leaveHistory.filter(leave => leave.year === selectedLeaveYear);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -418,7 +407,7 @@ useEffect(()=>{
           <Text style={styles.employeePhone}>{employee.phone}</Text>
           <Text style={styles.employeePhone}>{employee.email}</Text>
           <View style={styles.employeeMeta}>
-            <Text style={styles.employeeJoinDate}>Joined: {employee.joinedDate}</Text>
+            <Text style={styles.employeeJoinDate}>Joined: {employee.joinedDate ? formatDay(employee.joinedDate):""} {employee.joinedDate?.split('-')[0]}</Text>
           </View>
           <View style={styles.salaryInfo}>
             <Text style={styles.salaryText}>Base: ₹{employee.baseSalary.toLocaleString()}</Text>

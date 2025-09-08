@@ -1,6 +1,7 @@
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -28,15 +29,19 @@ function EmployeeManagement() {
   const [isAdding, setIsAdding] = useState(true);
   const [editingEmployee, setEditingEmployee] = useState(null);
   
+  // Date picker states
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  
   // Form state
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     email:'',
-    phone:'',
     baseSalary: '',
     overtimeRate: '',
-    officeId: 1
+    joinedDate: '',
+    officeId: 1,
   });
 
   const fetchEmployees = async () => {
@@ -62,6 +67,7 @@ function EmployeeManagement() {
         email: formData.email,
         baseSalary: formData.baseSalary,
         overtimeRate: formData.overtimeRate,
+        joinedDate: formData.joinedDate,
         officeId: formData.officeId,
         password: "welcome123"
       }, {
@@ -74,11 +80,10 @@ function EmployeeManagement() {
       setModalVisible(false);
       fetchEmployees();
     } catch (error) {
-      console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.officeId);
+      console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.joinedDate,formData.officeId);
       console.error('Error adding employee:', error);
     }
   };
-
 
   const editEmployee = async () => {
     if (!validateForm()) return;
@@ -89,6 +94,7 @@ function EmployeeManagement() {
         email: formData.email,
         baseSalary: formData.baseSalary,
         overtimeRate: formData.overtimeRate,
+        joinedDate: formData.joinedDate,
         officeId: formData.officeId
       }, {
         headers: {
@@ -100,7 +106,7 @@ function EmployeeManagement() {
       setModalVisible(false);
       fetchEmployees();
     } catch (error) {
-      console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.officeId);
+      console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.joinedDate,formData.officeId);
       console.error('Error editing employee:', error);
     }
   }
@@ -137,11 +143,24 @@ function EmployeeManagement() {
     }
   }
 
+  // Date picker handlers
+  const showDatePickerModal = () => {
+    setShowDatePicker(true);
+  };
+
+  const onDateChange = (event, date) => {
+    setShowDatePicker(false);
+    if (date) {
+      setSelectedDate(date);
+      const formattedDate = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      setFormData({...formData, joinedDate: formattedDate});
+    }
+  };
+
   // Sample data - replace with API call
   useEffect(() => {
     fetchEmployees();
   }, []);
-
 
   // Search functionality
   useEffect(() => {
@@ -163,9 +182,11 @@ function EmployeeManagement() {
       email: '',
       baseSalary: '',
       overtimeRate: '',
+      joinedDate: '',
       officeId: 1,
     });
     setEditingEmployee(null);
+    setSelectedDate(new Date());
   };
 
   const openAddModal = () => {
@@ -180,8 +201,15 @@ function EmployeeManagement() {
       email: employee.email,
       baseSalary: employee.baseSalary.toString(),
       overtimeRate: employee.overtimeRate.toString(),
+      joinedDate: employee.joinedDate || '',
       officeId: employee.officeId,
     });
+    
+    // Set the selected date for the date picker
+    if (employee.joinedDate) {
+      setSelectedDate(new Date(employee.joinedDate));
+    }
+    
     setEditingEmployee(employee);
     setModalVisible(true);
   };
@@ -203,10 +231,12 @@ function EmployeeManagement() {
       Alert.alert('Error', 'Please enter valid overtime rate');
       return false;
     }
+    if (!formData.joinedDate.trim()) {
+      Alert.alert('Error', 'Please select joined date');
+      return false;
+    }
     return true;
   };
-
-
 
   const renderEmployeeCard = ({ item }) => (
     <View style={styles.employeeCard}>
@@ -218,7 +248,6 @@ function EmployeeManagement() {
           <View style={styles.employeeDetails}>
             <Text style={styles.employeeName}>{item.name}</Text>
             <Text style={styles.employeePhone}>{item.phone}</Text>
-            {/* <Text style={styles.employeeRole}>{item.role}</Text> */}
           </View>
         </View>
         
@@ -235,8 +264,7 @@ function EmployeeManagement() {
           onPress={() => router.push(
            { pathname:`/EmployeeDetails`,
              params: { id: item.id } 
-             
-            })}
+           })}
         >
           <Feather name="eye" size={16} color="#4A90E2" />
           <Text style={[styles.actionText, { color: '#4A90E2' }]}>View</Text>
@@ -343,6 +371,7 @@ function EmployeeManagement() {
                     placeholder="+91 9876543210"
                     placeholderTextColor="#8A9BAE"
                     keyboardType="phone-pad"
+                    maxLength={10}
                   />
                 </View>
 
@@ -356,6 +385,19 @@ function EmployeeManagement() {
                     placeholderTextColor="#8A9BAE"
                     keyboardType="email-address"
                   />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Joined Date</Text>
+                  <TouchableOpacity 
+                    style={styles.datePickerButton} 
+                    onPress={showDatePickerModal}
+                  >
+                    <Text style={[styles.datePickerText, !formData.joinedDate && styles.placeholderText]}>
+                      {formData.joinedDate || 'Select joined date'}
+                    </Text>
+                    <AntDesign name="calendar" size={20} color="#8A9BAE" />
+                  </TouchableOpacity>
                 </View>
 
                 <View style={styles.inputGroup}>
@@ -402,6 +444,17 @@ function EmployeeManagement() {
           </View>
         </View>
       </Modal>
+
+      {/* Date Picker */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={onDateChange}
+          maximumDate={new Date()}
+        />
+      )}
     </SafeAreaView>
   )
 }
@@ -625,29 +678,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2A3441',
   },
-  roleContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  roleOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#2A3441',
-  },
-  roleOptionSelected: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
-  },
-  roleText: {
-    color: '#8A9BAE',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  roleTextSelected: {
-    color: '#FFFFFF',
-  },
   modalActions: {
     flexDirection: 'row',
     padding: 20,
@@ -677,5 +707,25 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  
+  // Date Picker Styles
+  datePickerButton: {
+    backgroundColor: '#111a22',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#2A3441',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  datePickerText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  placeholderText: {
+    color: '#8A9BAE',
   },
 });
