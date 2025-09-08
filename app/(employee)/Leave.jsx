@@ -14,6 +14,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useContextData } from '../../context/EmployeeContext';
 import { getToken } from '../../services/ApiService';
 import { formatDay } from "../../utils/TimeUtils";
 
@@ -29,6 +30,7 @@ function Leave() {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const currentYear = new Date().getFullYear();
+  const {employeeData} = useContextData()
 
   const fetchHolidays = async () => {
     try {
@@ -66,7 +68,6 @@ function Leave() {
           authorization: `Bearer ${await getToken()}`
         }
       });
-      console.log(response.data.leaves)
       setLeaveHistory(response.data.leaves)
     }catch(error){
        console.error('Error fetching Leaves History:', error);
@@ -94,7 +95,6 @@ function Leave() {
           authorization: `Bearer ${await getToken()}`,
         }
       });
-      console.log(response.data)
       if(response.data.message){
     setStartDate('');
     setEndDate('');
@@ -149,25 +149,25 @@ function Leave() {
           <View style={styles.summaryContent}>
             <View style={styles.summaryStats}>
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>10</Text>
+                <Text style={styles.statNumber}>{employeeData.leaveBalance + leaveHistory.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)}</Text>
                 <Text style={styles.statLabel}>Total</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>5</Text>
+                <Text style={styles.statNumber}>{leaveHistory.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)}</Text>
                 <Text style={styles.statLabel}>Used</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>5</Text>
+                <Text style={styles.statNumber}>{employeeData.leaveBalance}</Text>
                 <Text style={styles.statLabel}>Available</Text>
               </View>
             </View>
             <View style={styles.progressBarContainer}>
               <View style={styles.progressBarBg}>
-                <View style={[styles.progressBarFill, { width: '50%' }]} />
+                <View style={[styles.progressBarFill, { width: `${((leaveHistory.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0))/(employeeData.leaveBalance + leaveHistory.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)))*100}%` }]} />
               </View>
-              <Text style={styles.progressText}>50% used</Text>
+              <Text style={styles.progressText}>{((leaveHistory.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0))/(employeeData.leaveBalance + leaveHistory.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)))*100}% used</Text>
             </View>
           </View>
         </View>

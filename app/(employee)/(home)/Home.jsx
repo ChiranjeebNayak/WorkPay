@@ -5,6 +5,7 @@ import { useRouter } from "expo-router"
 import { useEffect, useState } from "react"
 import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { useContextData } from "../../../context/EmployeeContext"
 import { getToken, removeToken } from '../../../services/ApiService'
 import { calculateHoursManual, formatMinutesToHHMM } from "../../../utils/TimeUtils"
 
@@ -13,6 +14,7 @@ function Home() {
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
   const [dashboardDetails, setDashboardDetails] = useState(null);
+  const {setEmployeeData} = useContextData();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -30,6 +32,7 @@ function Home() {
       });
       const data = response.data;
       setDashboardDetails(data);
+      setEmployeeData(data.employeeDetails)
     } catch (error) {
       console.error('Error fetching dashboard details:', error);
     }

@@ -141,7 +141,6 @@ const fetchPaymentsData = async ()=>{
       );
       const data = response.data;
       setPaymentsData(data)
-      console.log(data)
     }catch(error){
       console.error("Error fetching attendance data:", error);
     }
@@ -540,11 +539,11 @@ useEffect(()=>{
                 <Text style={styles.summaryTitle}>Leave Summary ({selectedLeaveYear})</Text>
                 <View style={styles.leaveSummaryGrid}>
                   <View style={styles.leaveSummaryItem}>
-                    <Text style={styles.summaryValue}>{employee.leaveBalance + leavesData.leaves.filter((i)=>i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)}</Text>
+                    <Text style={styles.summaryValue}>{employee.leaveBalance + leavesData.leaves.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)}</Text>
                     <Text style={styles.summaryLabel}>Total Allocated</Text>
                   </View>
                   <View style={styles.leaveSummaryItem}>
-                    <Text style={[styles.summaryValue, { color: '#4A90E2' }]}>{leavesData.leaves.filter((i)=>i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)}</Text>
+                    <Text style={[styles.summaryValue, { color: '#4A90E2' }]}>{leavesData.leaves.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)}</Text>
                     <Text style={styles.summaryLabel}>Used</Text>
                   </View>
                   <View style={styles.leaveSummaryItem}>

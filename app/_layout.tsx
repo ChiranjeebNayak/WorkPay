@@ -3,6 +3,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { EmployeeProvider } from "../context/EmployeeContext";
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 
@@ -19,6 +20,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <EmployeeProvider>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="ForgotPassword" options={{ headerShown: false }} />
@@ -27,6 +29,7 @@ export default function RootLayout() {
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
+      </EmployeeProvider>
     </ThemeProvider>
   );
 }

@@ -1,12 +1,12 @@
 import Feather from "@expo/vector-icons/Feather";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import axios from "axios";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useContextData } from "../../../context/EmployeeContext";
 import { getToken } from "../../../services/ApiService";
-
 // Dummy employee data
 
 
@@ -19,9 +19,8 @@ function Profile() {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const {employeeData} = useContextData();
 
-   const { employee } = useLocalSearchParams();
-  const employeeData = employee ? JSON.parse(employee) : null;
 
   const handlePasswordUpdate = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
@@ -155,7 +154,7 @@ function Profile() {
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Base Salary</Text>
-                <Text style={styles.detailValue}>{employeeData.baseSalary}</Text>
+                <Text style={styles.detailValue}>{employeeData.baseSalary.toLocaleString()}</Text>
               </View>
             </View>
 
