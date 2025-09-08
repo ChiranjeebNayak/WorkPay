@@ -97,9 +97,6 @@ function Home() {
                   // Navigate to profile page
                    router.push({
                     pathname: "/(employee)/(home)/EmployeeProfile",
-                    params: { 
-                      employee: JSON.stringify(dashboardDetails?.employeeDetails) 
-                    }
                   });
                 }}
               >
