@@ -23,14 +23,13 @@ function AdminSalaryManagement() {
   const today = new Date()
   const currentMonth = today.getMonth() + 1
   const currentYear = today.getFullYear()
-  const isEndOfMonth = today.getDate() >= 28 // Simplified check for demo
 
   // States
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [advanceModalVisible, setAdvanceModalVisible] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState(null)
-  const [advanceAmount, setAdvanceAmount] = useState('')
+  const [advanceAmount, setAdvanceAmount] = useState(null)
   const [processingAdvance, setProcessingAdvance] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -110,83 +109,80 @@ function AdminSalaryManagement() {
 
   const isNextDisabled = selectedMonth === currentMonth && selectedYear === currentYear
 
-  const handleSettleSalary = async (employeeId) => {
-    const employee = employees.find(emp => emp.id === employeeId)
-    const monthName = getSelectedMonthName()
-    
-    Alert.alert(
-      'Settle Salary',
-      `Are you sure you want to settle ${employee.name}'s salary for ${monthName} ${selectedYear}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
+  const handleSettleSalary = async (employee) => {
+    setSelectedEmployee(employee);
+      try {
+      const response = await axios.post(`http://10.0.2.2:5000/api/transactions/add-transaction`, 
         {
-          text: 'Settle',
-          onPress: async () => {
-            try {
-              // Replace with actual API call to /api/salary/settle/:employeeId/:year/:month
-              setEmployees(prev => 
-                prev.map(emp => 
-                  emp.id === employeeId 
-                    ? { ...emp, status: 'Paid' }
-                    : emp
-                )
-              )
-              Alert.alert('Success', `${employee.name}'s salary for ${monthName} ${selectedYear} settled successfully!`)
-            } catch (error) {
-              Alert.alert('Error', 'Failed to settle salary. Please try again.')
-            }
-          }
+          empId:selectedEmployee.empId,
+          amount:(selectedEmployee.baseSalary + 
+        calculateMonthTotals(selectedEmployee.transactions).overtime 
+        - calculateMonthTotals(selectedEmployee.transactions).deduction
+        -calculateMonthTotals(selectedEmployee.transactions).advance
+      ),
+          description:`Salary payment for ${selectedEmployee.name} of amount ${selectedEmployee.baseSalary + 
+        calculateMonthTotals(selectedEmployee.transactions).overtime 
+        - calculateMonthTotals(selectedEmployee.transactions).deduction
+        -calculateMonthTotals(selectedEmployee.transactions).advance
+      }`,
+          type:"SALARY"
         }
-      ]
-    )
+        ,
+        {
+        headers: {
+          authorization: `Bearer ${await getToken()}`,
+        }
+      });
+      const data = response.data;
+      console.log(data)
+    } catch (err) {
+      console.log(err);
+    }
+
   }
 
   const handleAdvancePayment = (employee) => {
     setSelectedEmployee(employee)
-    setAdvanceAmount('')
+    setAdvanceAmount(null)
     setAdvanceModalVisible(true)
   }
 
   const processAdvancePayment = async () => {
-    if (!advanceAmount || parseFloat(advanceAmount) <= 0) {
-      Alert.alert('Error', 'Please enter a valid advance amount')
+      if( Number(advanceAmount) > (selectedEmployee.baseSalary + 
+        calculateMonthTotals(selectedEmployee.transactions).overtime 
+        - calculateMonthTotals(selectedEmployee.transactions).deduction
+        -calculateMonthTotals(selectedEmployee.transactions).advance
+      )){
+            Alert.alert('Error', `Advance amount cannot exceed ₹${(selectedEmployee.baseSalary + 
+        calculateMonthTotals(selectedEmployee.transactions).overtime 
+        - calculateMonthTotals(selectedEmployee.transactions).deduction
+        -calculateMonthTotals(selectedEmployee.transactions).advance).toLocaleString()}`)
       return
+      }
+      try {
+      const response = await axios.post(`http://10.0.2.2:5000/api/transactions/add-transaction`, 
+        {
+          empId:selectedEmployee.empId,
+          amount:advanceAmount,
+          description:`Advance payment for ${selectedEmployee.name} of amount ${advanceAmount}`,
+          type:"ADVANCE"
+        }
+        ,
+        {
+        headers: {
+          authorization: `Bearer ${await getToken()}`,
+        }
+      });
+      const data = response.data;
+      if(data.message){
+        fetchPaymentHistory();
+        setAdvanceAmount(null);
+        setAdvanceModalVisible(false)
+      }
+    } catch (err) {
+      console.log(err);
     }
-
-    const amount = parseFloat(advanceAmount)
-    const maxAdvance = selectedEmployee.baseSalary + selectedEmployee.overtimePay - selectedEmployee.deductions
-    
-    if (amount > maxAdvance) {
-      Alert.alert('Error', `Advance amount cannot exceed ₹${maxAdvance.toLocaleString()}`)
-      return
-    }
-
-    setProcessingAdvance(true)
-    
-    try {
-      // Replace with actual API call to /api/salary/advance/:employeeId
-      await new Promise(resolve => setTimeout(resolve, 1500)) // Simulate API call
       
-      setEmployees(prev => 
-        prev.map(emp => 
-          emp.id === selectedEmployee.id 
-            ? { 
-                ...emp, 
-                advancePayment: emp.advancePayment + amount,
-                finalSalary: emp.finalSalary - amount
-              }
-            : emp
-        )
-      )
-      
-      setAdvanceModalVisible(false)
-      setAdvanceAmount('')
-      Alert.alert('Success', `Advance payment of ₹${amount.toLocaleString()} processed successfully!`)
-    } catch (error) {
-      Alert.alert('Error', 'Failed to process advance payment. Please try again.')
-    } finally {
-      setProcessingAdvance(false)
-    }
   }
 
   const navigateToEmployeeDetails = (employeeId) => {
@@ -268,7 +264,7 @@ function AdminSalaryManagement() {
         {(item.transactions.filter(i=>i.payType === "SALARY").length === 0) && isCurrentMonth() && (
           <TouchableOpacity
             style={styles.settleButton}
-            onPress={() => handleSettleSalary(item.id)}
+            onPress={() => handleSettleSalary(item)}
           >
             <MaterialCommunityIcons name="check-circle" size={16} color="#fff" />
             <Text style={styles.settleButtonText}>Settle Salary</Text>
@@ -276,18 +272,18 @@ function AdminSalaryManagement() {
         )}
         
         {/* Past Months - Settle Overdue */}
-        {item.status !== 'Paid' && !isCurrentMonth() && (
+        {/* {item.status !== 'Paid' && !isCurrentMonth() && (
           <TouchableOpacity
             style={styles.settleButton}
-            onPress={() => handleSettleSalary(item.id)}
+            onPress={() => handleSettleSalary(item)}
           >
             <MaterialCommunityIcons name="alert-circle" size={16} color="#fff" />
             <Text style={styles.settleButtonText}>Settle Overdue</Text>
           </TouchableOpacity>
-        )}
+        )} */}
         
         {/* Advance Payment - Only for Current Month */}
-        {item.status !== 'Paid' && isCurrentMonth() && (
+        {(item.transactions.filter(i=>i.payType === "SALARY").length === 0) && isCurrentMonth() && (
           <TouchableOpacity
             style={styles.advanceButton}
             onPress={() => handleAdvancePayment(item)}
@@ -298,7 +294,7 @@ function AdminSalaryManagement() {
         )}
         
         {/* Paid Status Indicator */}
-        {item.status === 'Paid' && (
+        {(item.transactions.filter(i=>i.payType === "SALARY").length > 0) && (
           <View style={styles.paidIndicator}>
             <MaterialCommunityIcons name="check-circle" size={16} color="#7ED321" />
             <Text style={styles.paidText}>Salary Paid</Text>
@@ -451,24 +447,28 @@ function AdminSalaryManagement() {
                   <Text style={styles.modalSalaryLabel}>Current Month Salary Calculation:</Text>
                   <View style={styles.modalSalaryRow}>
                     <Text style={styles.modalSalaryText}>Base Salary:</Text>
-                    <Text style={styles.modalSalaryAmount}>₹{selectedEmployee.baseSalary.toLocaleString()}</Text>
+                    <Text style={styles.modalSalaryAmount}>₹{selectedEmployee.baseSalary}</Text>
                   </View>
                   <View style={styles.modalSalaryRow}>
                     <Text style={styles.modalSalaryText}>Overtime:</Text>
                     <Text style={[styles.modalSalaryAmount, { color: '#7ED321' }]}>
-                      + ₹{selectedEmployee.overtimePay.toLocaleString()}
+                      + ₹{calculateMonthTotals(selectedEmployee.transactions).overtime.toLocaleString()}
                     </Text>
                   </View>
                   <View style={styles.modalSalaryRow}>
                     <Text style={styles.modalSalaryText}>Deductions:</Text>
                     <Text style={[styles.modalSalaryAmount, { color: '#D0021B' }]}>
-                      - ₹{selectedEmployee.deductions.toLocaleString()}
+                      - ₹{calculateMonthTotals(selectedEmployee.transactions).deduction.toLocaleString()}
                     </Text>
                   </View>
                   <View style={[styles.modalSalaryRow, styles.maxAdvanceRow]}>
                     <Text style={styles.modalSalaryText}>Max Advance:</Text>
                     <Text style={styles.modalSalaryAmount}>
-                      ₹{(selectedEmployee.baseSalary + selectedEmployee.overtimePay - selectedEmployee.deductions).toLocaleString()}
+                      ₹{(selectedEmployee.baseSalary +
+                         calculateMonthTotals(selectedEmployee.transactions).overtime 
+                         - calculateMonthTotals(selectedEmployee.transactions).deduction
+                         -calculateMonthTotals(selectedEmployee.transactions).advance
+                         ).toLocaleString()}
                     </Text>
                   </View>
                 </View>
