@@ -40,7 +40,13 @@ const months = [
   { number: 12, name: "December" },
 ];
 
-
+ const calculateMonthTotals = (transactions) => {
+    const overtime = transactions.reduce((acc, it) => acc + (it.payType === "OVERTIME" ? it.amount : 0), 0);
+    const deduction = transactions.reduce((acc, it) => acc + (it.payType === "DEDUCTION" ? it.amount : 0), 0);
+    const advance = transactions.reduce((acc, it) => acc + (it.payType === "ADVANCE" ? it.amount : 0), 0);
+    
+    return { overtime, deduction, advance };
+  };
 
 function EmployeeDetails() {
   const router = useRouter();
@@ -61,7 +67,8 @@ function EmployeeDetails() {
   const [activeTab, setActiveTab] = useState('attendance'); // attendance, payment, leave
   const [employee, setEmployee] = useState(null);
   const [attendanceData,setAttendanceData] = useState([]);
-  const [leavesData,setLeavesData] = useState([])
+  const [leavesData,setLeavesData] = useState([]);
+  const [paymentsData,setPaymentsData]=  useState(null)
 
     const fetchEmployeeDetails = async () => {
     try {
@@ -122,107 +129,28 @@ useEffect(()=>{
   fetchLeavesData();
 },[id,selectedLeaveYear])
 
-  
 
-  // Sample payment history (sorted by recent first)
-  const paymentHistory = [
-    {
-      id: "8",
-      month: "August",
-      year: currentYear,
-      status: "Pending",
-      baseSalary: 35000,
-      overtime: 2000,
-      deduction: 300,
-      advance: 500,
-      total: 36200,
-      paidDate: null
-    },
-    {
-      id: "7",
-      month: "July",
-      year: currentYear,
-      status: "Paid",
-      baseSalary: 35000,
-      overtime: 2500,
-      deduction: 200,
-      advance: 1000,
-      total: 36300,
-      paidDate: "2025-07-31"
-    },
-    {
-      id: "6",
-      month: "June",
-      year: currentYear,
-      status: "Paid",
-      baseSalary: 35000,
-      overtime: 1800,
-      deduction: 150,
-      advance: 0,
-      total: 36650,
-      paidDate: "2025-06-30"
-    },
-    {
-      id: "5",
-      month: "May",
-      year: currentYear,
-      status: "Paid",
-      baseSalary: 35000,
-      overtime: 3000,
-      deduction: 400,
-      advance: 800,
-      total: 36800,
-      paidDate: "2025-05-31"
-    },
-    {
-      id: "4",
-      month: "April",
-      year: currentYear,
-      status: "Paid",
-      baseSalary: 35000,
-      overtime: 1500,
-      deduction: 250,
-      advance: 500,
-      total: 35750,
-      paidDate: "2025-04-30"
-    },
-    {
-      id: "3",
-      month: "March",
-      year: currentYear,
-      status: "Paid",
-      baseSalary: 35000,
-      overtime: 2200,
-      deduction: 300,
-      advance: 1200,
-      total: 35700,
-      paidDate: "2025-03-31"
-    },
-    {
-      id: "2",
-      month: "February",
-      year: currentYear,
-      status: "Paid",
-      baseSalary: 35000,
-      overtime: 1800,
-      deduction: 100,
-      advance: 600,
-      total: 36100,
-      paidDate: "2025-02-28"
-    },
-    {
-      id: "1",
-      month: "January",
-      year: currentYear,
-      status: "Paid",
-      baseSalary: 35000,
-      overtime: 2000,
-      deduction: 200,
-      advance: 800,
-      total: 36000,
-      paidDate: "2025-01-31"
-    },
-  ];
+const fetchPaymentsData = async ()=>{
+    try{
+      const response = await axios.get(`http://10.0.2.2:5000/api/transactions/get/monthly-transactions?empId=${id}&year=${selectedPaymentYear}`
+        ,{
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+        }
+      }
+      );
+      const data = response.data;
+      setPaymentsData(data)
+      console.log(data)
+    }catch(error){
+      console.error("Error fetching attendance data:", error);
+    }
+}
+
+useEffect(()=>{
+  fetchPaymentsData();
+},[id,selectedPaymentYear])
+  
 
   // Generate years for dropdown (current year and 4 previous years)
   const availableYears = Array.from({ length: 5 }, (_, i) => thisYear - i);
@@ -304,37 +232,42 @@ useEffect(()=>{
   const renderPaymentCard = ({ item }) => (
     <View style={styles.paymentCard}>
       <View style={styles.paymentHeader}>
-        <Text style={styles.paymentMonth}>{item.month} {item.year}</Text>
-        <View style={[styles.paymentStatusBadge, { backgroundColor: `${getStatusColor(item.status)}20` }]}>
+        <Text style={styles.paymentMonth}>{item.month} {paymentsData.year}</Text>
+        {/* <View style={[styles.paymentStatusBadge, { backgroundColor: `${getStatusColor(item.status)}20` }]}>
           <Text style={[styles.paymentStatus, { color: getStatusColor(item.status) }]}>
             {item.status}
           </Text>
-        </View>
+        </View> */}
       </View>
       
       <View style={styles.paymentDetails}>
         <View style={styles.paymentRow}>
           <Text style={styles.paymentLabel}>Base Salary</Text>
-          <Text style={styles.paymentAmount}>₹{item.baseSalary.toLocaleString()}</Text>
+          <Text style={styles.paymentAmount}>₹{paymentsData.baseSalary.toLocaleString()}</Text>
         </View>
         <View style={styles.paymentRow}>
           <Text style={styles.paymentLabel}>Overtime</Text>
-          <Text style={[styles.paymentAmount, { color: '#7ED321' }]}>+ ₹{item.overtime.toLocaleString()}</Text>
+          <Text style={[styles.paymentAmount, { color: '#7ED321' }]}>+ ₹{calculateMonthTotals(item.transactions).overtime}</Text>
         </View>
         <View style={styles.paymentRow}>
           <Text style={styles.paymentLabel}>Deductions</Text>
-          <Text style={[styles.paymentAmount, { color: '#D0021B' }]}>- ₹{item.deduction.toLocaleString()}</Text>
+          <Text style={[styles.paymentAmount, { color: '#D0021B' }]}>- ₹{calculateMonthTotals(item.transactions).deduction}</Text>
         </View>
         <View style={styles.paymentRow}>
           <Text style={styles.paymentLabel}>Advance</Text>
-          <Text style={[styles.paymentAmount, { color: '#D0021B' }]}>- ₹{item.advance.toLocaleString()}</Text>
+          <Text style={[styles.paymentAmount, { color: '#D0021B' }]}>- ₹{calculateMonthTotals(item.transactions).advance}</Text>
         </View>
         <View style={[styles.paymentRow, styles.totalRow]}>
           <Text style={styles.totalLabel}>Net Salary</Text>
-          <Text style={styles.totalAmount}>₹{item.total.toLocaleString()}</Text>
+          <Text style={styles.totalAmount}>₹{
+            paymentsData.baseSalary +
+            calculateMonthTotals(item.transactions).overtime -
+            calculateMonthTotals(item.transactions).deduction - 
+            calculateMonthTotals(item.transactions).advance
+            }</Text>
         </View>
-        {item.paidDate && (
-          <Text style={styles.paidDate}>Paid on: {item.paidDate}</Text>
+        {item.transactions.filter(i=>i.payType === "SALARY")[0]?.date && (
+          <Text style={styles.paidDate}>Paid on: {item.transactions.filter(i=>i.payType === "SALARY")[0]?.date}</Text>
         )}
       </View>
     </View>
@@ -589,15 +522,8 @@ useEffect(()=>{
 
         {activeTab === 'payment' && (
           <FlatList
-            data={paymentHistory.filter(p => p.year === selectedPaymentYear).sort((a, b) => {
-              const monthOrder = { 
-                'December': 12, 'November': 11, 'October': 10, 'September': 9,
-                'August': 8, 'July': 7, 'June': 6, 'May': 5,
-                'April': 4, 'March': 3, 'February': 2, 'January': 1
-              };
-              return monthOrder[b.month] - monthOrder[a.month];
-            })}
-            keyExtractor={(item) => item.id}
+            data={paymentsData?.transactionsData}
+            keyExtractor={(item,index) => index}
             contentContainerStyle={styles.listContent}
             renderItem={renderPaymentCard}
             showsVerticalScrollIndicator={false}

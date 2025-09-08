@@ -56,8 +56,9 @@ function AdminSalaryManagement() {
 
   // Sample data - replace with API calls
   useEffect(() => {
-    loadSalaryData();
+     setLoading(true)
     fetchPaymentHistory();
+     setLoading(false)
   }, [selectedMonth, selectedYear]);
 
 
@@ -69,75 +70,6 @@ function AdminSalaryManagement() {
     return { overtime, deduction, advance };
   };
 
-  const loadSalaryData = async () => {
-    setLoading(true)
-    // Replace with actual API call to /api/salary/:year/:month
-    setTimeout(() => {
-      // Generate sample data based on selected month/year
-      const isPastMonth = selectedYear < currentYear || (selectedYear === currentYear && selectedMonth < currentMonth)
-      
-      const sampleEmployees = [
-        {
-          id: '1',
-          name: 'John Smith',
-          phone: '+91 9876543210',
-          baseSalary: 35000,
-          overtimeHours: selectedMonth === currentMonth ? 12 : 15,
-          overtimeRate: 250,
-          overtimePay: selectedMonth === currentMonth ? 3000 : 3750,
-          advancePayment: selectedMonth === currentMonth ? 5000 : 2000,
-          deductions: selectedMonth === currentMonth ? 800 : 1200,
-          finalSalary: selectedMonth === currentMonth ? 32200 : 35550,
-          status: isPastMonth ? (selectedMonth <= 6 ? 'Due' : 'Paid') : 'Pending',
-          unpaidLeaveDays: selectedMonth === currentMonth ? 2 : 3
-        },
-        {
-          id: '2',
-          name: 'Sarah Johnson',
-          phone: '+91 9876543211',
-          baseSalary: 30000,
-          overtimeHours: selectedMonth === currentMonth ? 8 : 10,
-          overtimeRate: 200,
-          overtimePay: selectedMonth === currentMonth ? 1600 : 2000,
-          advancePayment: selectedMonth === currentMonth ? 2000 : 1500,
-          deductions: 0,
-          finalSalary: selectedMonth === currentMonth ? 29600 : 30500,
-          status: isPastMonth ? 'Paid' : 'Paid',
-          unpaidLeaveDays: 0
-        },
-        {
-          id: '3',
-          name: 'Mike Wilson',
-          phone: '+91 9876543212',
-          baseSalary: 40000,
-          overtimeHours: selectedMonth === currentMonth ? 15 : 18,
-          overtimeRate: 300,
-          overtimePay: selectedMonth === currentMonth ? 4500 : 5400,
-          advancePayment: selectedMonth === currentMonth ? 8000 : 6000,
-          deductions: selectedMonth === currentMonth ? 1200 : 800,
-          finalSalary: selectedMonth === currentMonth ? 35300 : 38600,
-          status: isPastMonth ? (selectedMonth <= 5 ? 'Due' : 'Paid') : 'Pending',
-          unpaidLeaveDays: selectedMonth === currentMonth ? 3 : 2
-        },
-        {
-          id: '4',
-          name: 'Emily Davis',
-          phone: '+91 9876543213',
-          baseSalary: 32000,
-          overtimeHours: selectedMonth === currentMonth ? 6 : 8,
-          overtimeRate: 220,
-          overtimePay: selectedMonth === currentMonth ? 1320 : 1760,
-          advancePayment: selectedMonth === currentMonth ? 1500 : 1000,
-          deductions: selectedMonth === currentMonth ? 400 : 600,
-          finalSalary: selectedMonth === currentMonth ? 31420 : 32160,
-          status: isPastMonth ? 'Paid' : 'Pending',
-          unpaidLeaveDays: selectedMonth === currentMonth ? 1 : 1.5
-        }
-      ]
-      setEmployees(sampleEmployees)
-      setLoading(false)
-    }, 1000)
-  }
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -485,7 +417,7 @@ function AdminSalaryManagement() {
       {/* Employee List */}
       <FlatList
         data={paymentData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.empId}
         contentContainerStyle={styles.listContent}
         renderItem={renderEmployeeCard}
         showsVerticalScrollIndicator={false}
