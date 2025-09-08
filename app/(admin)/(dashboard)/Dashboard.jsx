@@ -23,7 +23,6 @@ function Dashboard() {
       });
       const data = response.data;
       setData(data);
-      console.log(data.pendingLeaves)
     } catch (error) {
       console.error('Error fetching dashboard details:', error);
       return null;

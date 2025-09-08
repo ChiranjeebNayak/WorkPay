@@ -1,67 +1,84 @@
-import React, { useState } from 'react'
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import axios from 'axios';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getToken } from '../../../services/ApiService';
+import { formatDay } from "../../../utils/TimeUtils";
 
 function LeaveRequests() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState('pendingLeaves');
+  const [data,setData] = useState([])
 
-  // Sample leave requests data
-  const leaveRequests = {
-    pending: [
-      { id: 1, name: 'John Smith', leaveType: 'Annual Leave', dates: '5-8 Sep 2025', reason: 'Family vacation' },
-      { id: 2, name: 'Sarah Johnson', leaveType: 'Sick Leave', dates: '3-4 Sep 2025', reason: 'Medical checkup' },
-      { id: 3, name: 'Mike Wilson', leaveType: 'Personal Leave', dates: '10-12 Sep 2025', reason: 'Personal matters' },
-      { id: 4, name: 'Emma Davis', leaveType: 'Maternity Leave', dates: '15 Sep - 15 Dec 2025', reason: 'Maternity leave' },
-      { id: 5, name: 'Robert Brown', leaveType: 'Annual Leave', dates: '20-25 Sep 2025', reason: 'Wedding ceremony' },
-    ],
-    accepted: [
-      { id: 6, name: 'Alice Cooper', leaveType: 'Annual Leave', dates: '1-3 Sep 2025', reason: 'Weekend getaway' },
-      { id: 7, name: 'David Lee', leaveType: 'Sick Leave', dates: '28-29 Aug 2025', reason: 'Flu recovery' },
-      { id: 8, name: 'Lisa Wang', leaveType: 'Personal Leave', dates: '25-26 Aug 2025', reason: 'House moving' },
-    ],
-    rejected: [
-      { id: 9, name: 'Tom Anderson', leaveType: 'Annual Leave', dates: '15-20 Sep 2025', reason: 'Vacation conflict with project deadline' },
-      { id: 10, name: 'Kate Miller', leaveType: 'Personal Leave', dates: '12-13 Sep 2025', reason: 'Insufficient notice period' },
-    ]
-  };
+  const fetchLeaveRequest = async ()=>{
+    try{
+       const response = await axios.get('http://10.0.2.2:5000/api/leaves/summary', {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+      const data = response.data;
+      setData(data);
+      console.log(data)
+    }catch(error){
+      console.error("Error fetching leaves request",error)
+    }
+  }
+
+    const handleAcceptReject = async (id,type)=>{
+    try{
+       const response = await axios.post('http://10.0.2.2:5000/api/leaves/update-status',
+        {
+          leaveId:id,
+          status:type
+        }, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+      const data = response.data;
+      if(data.message){
+        fetchLeaveRequest();
+      }
+    }catch(error){
+      console.error("Error fetching leaves request",error)
+    }
+  }
+
+
+useEffect(()=>{
+  fetchLeaveRequest();
+},[])
+
+
 
   const tabs = [
-    { key: 'pending', label: 'Pending', count: leaveRequests.pending.length },
-    { key: 'accepted', label: 'Accepted', count: leaveRequests.accepted.length },
-    { key: 'rejected', label: 'Rejected', count: leaveRequests.rejected.length },
+    { key: 'pendingLeaves', label: 'Pending Leaves', count: data?.pendingLeaves?.length },
+    { key: 'approvedLeaves', label: 'Approved Leaves', count: data?.approvedLeaves?.length },
+    { key: 'rejectedLeaves', label: 'Rejected Leaves', count: data?.rejectedLeaves?.length },
   ];
 
   const getStatusColor = (status) => {
     switch(status) {
-      case 'pending': return '#FFB800';
-      case 'accepted': return '#1b947cff';
-      case 'rejected': return '#a51212ff';
+      case 'pendingLeaves': return '#FFB800';
+      case 'approvedLeaves': return '#1b947cff';
+      case 'rejectedLeaves': return '#a51212ff';
       default: return '#FFB800';
     }
   };
 
   const getStatusLabel = (status) => {
     switch(status) {
-      case 'pending': return 'Pending';
-      case 'accepted': return 'Accepted';
-      case 'rejected': return 'Rejected';
+      case 'pendingLeaves': return 'Pending';
+      case 'approvedLeaves': return 'Accepted';
+      case 'rejectedLeaves': return 'Rejected';
       default: return 'Pending';
     }
   };
 
-  const handleAccept = (requestId) => {
-    // Handle accept logic here
-    console.log('Accept request:', requestId);
-  };
 
-  const handleReject = (requestId) => {
-    // Handle reject logic here
-    console.log('Reject request:', requestId);
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -99,12 +116,12 @@ function LeaveRequests() {
       {/* Content */}
       <ScrollView style={styles.content}>
         <View style={styles.requestsContainer}>
-          {leaveRequests[activeTab].map((request, index) => (
+          {data?.[activeTab]?.map((request, index) => (
             <View key={request.id} style={styles.requestItem}>
               <View style={styles.requestInfo}>
-                <Text style={styles.requestName}>{request.name}</Text>
-                <Text style={styles.requestType}>{request.leaveType}</Text>
-                <Text style={styles.requestDates}>{request.dates}</Text>
+                <Text style={styles.requestName}>{request?.employee.name}</Text>
+                <Text style={styles.requestType}>{request?.type}</Text>
+                <Text style={styles.requestDates}>{formatDay(request?.fromDate) }- { formatDay(request.toDate)}</Text>
                 <Text style={styles.requestReason}>{request.reason}</Text>
               </View>
               
@@ -113,14 +130,14 @@ function LeaveRequests() {
                   <View style={styles.actionButtons}>
                     <TouchableOpacity 
                       style={[styles.actionButton, styles.acceptButton]}
-                      onPress={() => handleAccept(request.id)}
+                      onPress={() => handleAcceptReject(request.id,"APPROVED")}
                     >
                       <AntDesign name="check" size={16} color="#ffffff" />
                       <Text style={styles.actionButtonText}>Accept</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                       style={[styles.actionButton, styles.rejectButton]}
-                      onPress={() => handleReject(request.id)}
+                      onPress={() => handleAcceptReject(request.id,"REJECTED")}
                     >
                       <AntDesign name="close" size={16} color="#ffffff" />
                       <Text style={styles.actionButtonText}>Reject</Text>
