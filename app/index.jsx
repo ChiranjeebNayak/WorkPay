@@ -14,6 +14,7 @@ import {
   TouchableWithoutFeedback,
   View
 } from 'react-native';
+import { useContextData } from "../context/EmployeeContext";
 import { storeToken } from '../services/ApiService';
 
 function index() {
@@ -24,6 +25,7 @@ function index() {
   const [errors,setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const {showToast} = useContextData()
 
     // Clear errors when switching tabs
   const clearErrors = () => {
@@ -66,12 +68,11 @@ function index() {
 
       if (response.data.token) {
         await storeToken(response.data.token);
+         showToast(response?.data?.message,"Success")
         router.push('/(employee)/(home)/Home');
       }
     } catch (error) {
-      console.error('Employee login error:', error);
-      const errorMessage = error.response?.data?.message || 'Invalid phone number or password';
-      setErrors({ login: errorMessage });
+      showToast(error.response?.data?.error,"Error")
     } finally {
       setIsLoading(false);
     }
@@ -110,11 +111,13 @@ function index() {
       
       if (response.data.token) {
         await storeToken(response.data.token);
+        showToast(response?.data?.message,"Success")
         router.push('/(admin)/(dashboard)/Dashboard');
       }
     } catch (error) {
-      console.error('Admin login error:', error);
-      const errorMessage = error.response?.data?.message || 'Invalid email or password';
+      showToast(error.response?.data?.error,"Error")
+      console.error('Admin login error:', error.response?.data?.error);
+      const errorMessage = error.response?.data?.error || 'Invalid email or password';
       setErrors({ login: errorMessage });
     } finally {
       setIsLoading(false);
