@@ -16,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { url } from "../../../constants/EnvValue";
 import { useContextData } from "../../../context/EmployeeContext";
 import { getToken } from "../../../services/ApiService";
 
@@ -33,7 +34,7 @@ function HolidayManagement() {
   const fetchHolidays = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://10.0.2.2:5000/api/holidays/getAll`, {
+      const response = await axios.get(`${url}/api/holidays/getAll`, {
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
@@ -67,7 +68,7 @@ function HolidayManagement() {
 
     try {
       setIsLoading(true);
-      const response = await axios.post(`http://10.0.2.2:5000/api/holidays/add`, {
+      const response = await axios.post(`${url}/api/holidays/add`, {
         description: holidayName,
         date: holidayDate.toISOString()
       }, {
@@ -103,13 +104,13 @@ function HolidayManagement() {
           onPress: async () => {
             try {
               setIsLoading(true);
-              await axios.delete(`http://10.0.2.2:5000/api/holidays/delete/${holidayId}`, {
+              await axios.delete(`${url}/api/holidays/delete/${holidayId}`, {
                 headers: {
                   authorization: `Bearer ${await getToken()}`
                 }
               });
 
-              Alert.alert('Success', 'Holiday deleted successfully!');
+              showToast( 'Holiday deleted successfully!','Success');
               
               // Refresh the holidays list
               await fetchHolidays();

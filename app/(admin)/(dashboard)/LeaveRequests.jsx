@@ -4,9 +4,11 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { url } from '../../../constants/EnvValue';
 import { useContextData } from '../../../context/EmployeeContext';
 import { getToken } from '../../../services/ApiService';
 import { formatDay } from "../../../utils/TimeUtils";
+
 
 function LeaveRequests() {
   const router = useRouter();
@@ -16,7 +18,7 @@ function LeaveRequests() {
 
   const fetchLeaveRequest = async ()=>{
     try{
-       const response = await axios.get('http://10.0.2.2:5000/api/leaves/summary', {
+       const response = await axios.get(`${url}/api/leaves/summary`, {
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
@@ -32,7 +34,7 @@ function LeaveRequests() {
 
     const handleAcceptReject = async (id,type)=>{
     try{
-       const response = await axios.post('http://10.0.2.2:5000/api/leaves/update-status',
+       const response = await axios.post(`${url}/api/leaves/update-status`,
         {
           leaveId:id,
           status:type

@@ -14,6 +14,7 @@ import {
   TouchableWithoutFeedback,
   View
 } from 'react-native';
+import { url } from "../constants/EnvValue";
 import { useContextData } from "../context/EmployeeContext";
 import { storeToken } from '../services/ApiService';
 
@@ -56,7 +57,7 @@ function index() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post('http://10.0.2.2:5000/api/employees/login', {
+      const response = await axios.post(`${url}/api/employees/login`, {
         phone: employeeLogin.phone,
         password: employeeLogin.password,
       },
@@ -104,7 +105,7 @@ function index() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post('http://10.0.2.2:5000/api/admins/login', {
+      const response = await axios.post(`${url}/api/admins/login`, {
         email: adminLogin.email,
         password: adminLogin.password,
       });

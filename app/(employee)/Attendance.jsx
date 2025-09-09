@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DataCard from "../../components/Attendance/DataCard";
+import { url } from "../../constants/EnvValue";
 import { useContextData } from "../../context/EmployeeContext";
 import { getToken } from "../../services/ApiService";
 import { calculateTotalOvertime, countAbsentDays, countPresentDays, getTotalDaysInMonth } from "../../utils/TimeUtils";
@@ -62,7 +63,7 @@ const {showToast} = useContextData()
 
   const fetchAttendanceData = async () => {
     try{
-      const response = await axios.get(`http://10.0.2.2:5000/api/attendances/getAttendance?month=${currentMonth}&year=${currentYear}`
+      const response = await axios.get(`${url}/api/attendances/getAttendance?month=${currentMonth}&year=${currentYear}`
         ,{
           headers: {
             Authorization: `Bearer ${await getToken()}`,

@@ -18,8 +18,10 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { url } from '../../../constants/EnvValue';
 import { useContextData } from "../../../context/EmployeeContext";
 import { getToken } from '../../../services/ApiService';
+
 
 function EmployeeManagement() {
   const router = useRouter();
@@ -48,7 +50,7 @@ function EmployeeManagement() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await axios.get('http://10.0.2.2:5000/api/employees/getAll',{
+      const response = await axios.get(`${url}api/employees/getAll`,{
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
@@ -64,7 +66,7 @@ function EmployeeManagement() {
   const addEmployee = async () => {
     if (!validateForm()) return;
     try {
-      const response = await axios.post('http://10.0.2.2:5000/api/employees/add', {
+      const response = await axios.post(`${url}/api/employees/add`, {
         name: formData.name,
         phone: formData.phone,
         email: formData.email,
@@ -93,7 +95,7 @@ function EmployeeManagement() {
   const editEmployee = async () => {
     if (!validateForm()) return;
     try {
-      const response = await axios.put(`http://10.0.2.2:5000/api/employees/update/${editingEmployee.id}`, {
+      const response = await axios.put(`${url}/api/employees/update/${editingEmployee.id}`, {
         name: formData.name,
         phone: formData.phone,
         email: formData.email,
@@ -126,7 +128,7 @@ function EmployeeManagement() {
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: async () => {
             try {
-              const response = await axios.delete(`http://10.0.2.2:5000/api/employees/delete/${employee.id}`, {
+              const response = await axios.delete(`${url}/api/employees/delete/${employee.id}`, {
                 headers: {
                   authorization: `Bearer ${await getToken()}`
                 }

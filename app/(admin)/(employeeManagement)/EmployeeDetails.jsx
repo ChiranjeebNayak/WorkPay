@@ -13,6 +13,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { url } from '../../../constants/EnvValue';
 import { useContextData } from '../../../context/EmployeeContext';
 import { getToken } from '../../../services/ApiService';
 import {
@@ -25,6 +26,7 @@ import {
   formatTime,
   getTotalDaysInMonth
 } from "../../../utils/TimeUtils";
+
 
 const months = [
   { number: 1, name: "January" },
@@ -74,7 +76,7 @@ function EmployeeDetails() {
 
     const fetchEmployeeDetails = async () => {
     try {
-      const response = await axios.get(`http://10.0.2.2:5000/api/employees/get/${id}`, {
+      const response = await axios.get(`${url}/api/employees/get/${id}`, {
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
@@ -87,7 +89,7 @@ function EmployeeDetails() {
 
     const fetchAttendanceData = async () => {
     try{
-      const response = await axios.get(`http://10.0.2.2:5000/api/attendances/getEmployeeAttendance?empId=${id}&month=${currentMonth}&year=${currentYear}`
+      const response = await axios.get(`${url}/api/attendances/getEmployeeAttendance?empId=${id}&month=${currentMonth}&year=${currentYear}`
         ,{
           headers: {
             Authorization: `Bearer ${await getToken()}`,
@@ -113,7 +115,7 @@ function EmployeeDetails() {
 
 const fetchLeavesData = async ()=>{
   try{
-      const response = await axios.get(`http://10.0.2.2:5000/api/leaves/get/employee-leaves?empId=${id}&year=${selectedLeaveYear}`
+      const response = await axios.get(`${url}/api/leaves/get/employee-leaves?empId=${id}&year=${selectedLeaveYear}`
         ,{
           headers: {
             Authorization: `Bearer ${await getToken()}`,
@@ -134,7 +136,7 @@ useEffect(()=>{
 
 const fetchPaymentsData = async ()=>{
     try{
-      const response = await axios.get(`http://10.0.2.2:5000/api/transactions/get/monthly-transactions?empId=${id}&year=${selectedPaymentYear}`
+      const response = await axios.get(`${url}/api/transactions/get/monthly-transactions?empId=${id}&year=${selectedPaymentYear}`
         ,{
           headers: {
             Authorization: `Bearer ${await getToken()}`,

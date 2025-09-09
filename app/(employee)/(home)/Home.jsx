@@ -5,9 +5,11 @@ import { useRouter } from "expo-router"
 import { useEffect, useState } from "react"
 import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { url } from '../../../constants/EnvValue'
 import { useContextData } from "../../../context/EmployeeContext"
 import { getToken, removeToken } from '../../../services/ApiService'
 import { calculateHoursManual, formatMinutesToHHMM } from "../../../utils/TimeUtils"
+
 
 function Home() {
   const [dateTime, setDateTime] = useState(new Date());
@@ -25,7 +27,7 @@ function Home() {
 
   const fetchDashboardDetails = async () => {
     try {
-      const response = await axios.get('http://10.0.2.2:5000/api/employees/dashboard', {
+      const response = await axios.get(`${url}/api/employees/dashboard`, {
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
@@ -45,7 +47,7 @@ function Home() {
 
   const handleAttendanceAction = async (action) => {
     try {
-      const response = await axios.post(`http://10.0.2.2:5000/api/attendances/mark`, {
+      const response = await axios.post(`${url}/api/attendances/mark`, {
         type: action
       },{
         headers: {

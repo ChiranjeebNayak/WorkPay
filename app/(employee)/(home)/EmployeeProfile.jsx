@@ -5,8 +5,10 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { url } from "../../../constants/EnvValue";
 import { useContextData } from "../../../context/EmployeeContext";
 import { getToken } from "../../../services/ApiService";
+
 // Dummy employee data
 
 
@@ -44,7 +46,7 @@ function Profile() {
     }
 
     try{
-        const response = await axios.post(`http://10.0.2.2:5000/api/employees/update-password`,{
+        const response = await axios.post(`${url}/api/employees/update-password`,{
           currentPassword:oldPassword,
           newPassword:newPassword
         },

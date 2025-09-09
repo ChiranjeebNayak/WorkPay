@@ -13,9 +13,11 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { url } from '../../constants/EnvValue';
 import { useContextData } from '../../context/EmployeeContext';
 import { getToken } from '../../services/ApiService';
 import { formatDay } from "../../utils/TimeUtils";
+
 
 function Leave() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -34,7 +36,7 @@ function Leave() {
   const fetchHolidays = async () => {
     try {
       setIsLoadingHolidays(true);
-      const response = await axios.get(`http://10.0.2.2:5000/api/holidays/getAll`, {
+      const response = await axios.get(`${url}/api/holidays/getAll`, {
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
@@ -63,7 +65,7 @@ function Leave() {
 
   const fetchLeavesHistory = async ()=>{
     try{
-       const response = await axios.get(`http://10.0.2.2:5000/api/leaves/employee-leaves?year=${currentYear}`, {
+       const response = await axios.get(`${url}/api/leaves/employee-leaves?year=${currentYear}`, {
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
@@ -87,7 +89,7 @@ function Leave() {
     }
     
   try{
-       const response = await axios.post(`http://10.0.2.2:5000/api/leaves/apply`,{
+       const response = await axios.post(`${url}/api/leaves/apply`,{
         reason:description,
         startDate:startDate,
         endDate:endDate

@@ -15,6 +15,7 @@ import {
   View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { url } from '../../constants/EnvValue'
 import { useContextData } from "../../context/EmployeeContext"
 import { getToken } from "../../services/ApiService"
 
@@ -39,7 +40,7 @@ function AdminSalaryManagement() {
    const fetchPaymentHistory = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://10.0.2.2:5000/api/transactions/monthly-transactions?year=${selectedYear}&month=${selectedMonth}`, {
+      const response = await axios.get(`${url}/api/transactions/monthly-transactions?year=${selectedYear}&month=${selectedMonth}`, {
         headers: {
           authorization: `Bearer ${await getToken()}`,
         }
@@ -113,7 +114,7 @@ function AdminSalaryManagement() {
   const handleSettleSalary = async (employee) => {
     setSelectedEmployee(employee);
       try {
-      const response = await axios.post(`http://10.0.2.2:5000/api/transactions/add-transaction`, 
+      const response = await axios.post(`${url}/api/transactions/add-transaction`, 
         {
           empId:selectedEmployee.empId,
           amount:(selectedEmployee.baseSalary + 
@@ -163,7 +164,7 @@ function AdminSalaryManagement() {
       return
       }
       try {
-      const response = await axios.post(`http://10.0.2.2:5000/api/transactions/add-transaction`, 
+      const response = await axios.post(`${url}/api/transactions/add-transaction`, 
         {
           empId:selectedEmployee.empId,
           amount:advanceAmount,

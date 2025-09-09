@@ -7,9 +7,11 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { url } from '../../../constants/EnvValue';
 import { useContextData } from '../../../context/EmployeeContext';
 import { getToken, removeToken } from '../../../services/ApiService';
 import { formatDay } from "../../../utils/TimeUtils";
+
 
 function Dashboard() {
   const router = useRouter();
@@ -18,7 +20,7 @@ function Dashboard() {
 
   const dashboardDetails = async () => {
     try {
-      const response = await axios.get('http://10.0.2.2:5000/api/attendances/getTodayAttendance', {
+      const response = await axios.get(`${url}/api/attendances/getTodayAttendance`, {
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
