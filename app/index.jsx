@@ -4,12 +4,14 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View
 } from 'react-native';
 import { storeToken } from '../services/ApiService';
@@ -121,8 +123,9 @@ function index() {
 
 
   return (
+           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior='padding'
       style={styles.container}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
     >
@@ -337,8 +340,9 @@ function index() {
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>Secure • Reliable • Easy</Text>
-      </View>
+      </View>  
     </KeyboardAvoidingView>
+     </TouchableWithoutFeedback>
   );
 }
 

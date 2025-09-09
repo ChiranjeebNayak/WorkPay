@@ -1,16 +1,18 @@
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
-  Alert,
 } from 'react-native';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 function ForgotPassword() {
   const [step, setStep] = useState(1); // 1: Enter details, 2: Verify OTP, 3: Reset password
@@ -267,11 +269,12 @@ function ForgotPassword() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.container}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
-    >
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+     <KeyboardAvoidingView
+       behavior='padding'
+       style={styles.container}
+       keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+     >
       {/* Background gradient effect */}
       <View style={styles.backgroundGradient} />
       
@@ -343,6 +346,7 @@ function ForgotPassword() {
         <Text style={styles.footerText}>Need help? Contact support</Text>
       </View>
     </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 
