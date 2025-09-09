@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   summaryContainer: {
-    backgroundColor: 'rgba(30, 144, 255, 0.08)',
+    backgroundColor: '#192633',
     borderRadius: 20,
     padding: 24,
     marginBottom: 20,
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: '#1a2332',
+    backgroundColor: '#192633',
     borderRadius: 16,
     padding: 6,
     marginBottom: 20,
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   leaveCard: {
-    backgroundColor: '#1a2332',
+    backgroundColor: '#192633',
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,

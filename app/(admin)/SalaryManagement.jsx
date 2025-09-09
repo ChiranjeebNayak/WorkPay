@@ -25,7 +25,6 @@ function AdminSalaryManagement() {
   const currentYear = today.getFullYear()
 
   // States
-  const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [advanceModalVisible, setAdvanceModalVisible] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState(null)

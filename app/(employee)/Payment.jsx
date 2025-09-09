@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#111a22',
   },
   salaryOverviewContainer: {
-    backgroundColor: '#1e262f',
+    backgroundColor: '#192633',
     borderRadius: 8,
     padding: 16,
     marginVertical: 12,
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     color: "#cce6ff",
   },
   historyContainer: {
-    backgroundColor: '#1e262f',
+    backgroundColor: '#192633',
     borderRadius: 8,
     padding: 16,
     width: '90%',

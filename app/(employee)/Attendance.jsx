@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   },
   overViewCard: {
     width: "92%",
-    backgroundColor: "#233648",
+    backgroundColor: "#192633",
     borderRadius: 10,
     padding: 15,
     gap: 15,

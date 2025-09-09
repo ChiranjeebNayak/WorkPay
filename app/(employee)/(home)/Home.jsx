@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
 
   checkInOutContainer: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: '#192633',
     borderRadius: 24,
     padding: 32,
     marginTop: 20,
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: '#192633',
     borderRadius: 20,
     paddingVertical: 24,
     paddingHorizontal: 8,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
   statsCard: {
     flexDirection: 'row',
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: '#192633',
     borderRadius: 20,
     paddingVertical: 20,
     marginTop: 16,
