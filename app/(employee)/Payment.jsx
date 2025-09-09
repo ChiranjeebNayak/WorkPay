@@ -3,6 +3,7 @@ import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useContextData } from '../../context/EmployeeContext'
 import { getToken } from '../../services/ApiService'
 
 const months = [
@@ -19,6 +20,7 @@ function Payment() {
   const [paymentData, setPaymentData] = useState(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const {showToast} = useContextData();
 
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
@@ -51,6 +53,7 @@ function Payment() {
       const data = response.data;
       setPaymentData(data);
     } catch (err) {
+      showToast(err.response.data.error,'Error');
       console.log(err);
     } finally {
       setLoading(false);

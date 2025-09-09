@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DataCard from "../../components/Attendance/DataCard";
+import { useContextData } from "../../context/EmployeeContext";
 import { getToken } from "../../services/ApiService";
 import { calculateTotalOvertime, countAbsentDays, countPresentDays, getTotalDaysInMonth } from "../../utils/TimeUtils";
 
@@ -35,7 +36,7 @@ function Attendance() {
   const [currentMonth, setCurrentMonth] = useState(thisMonth);
   const [currentYear, setCurrentYear] = useState(thisYear);
   const [attendanceData, setAttendanceData] = useState([]);
-
+const {showToast} = useContextData()
 
 
 
@@ -71,6 +72,7 @@ function Attendance() {
       const data = response.data;
       setAttendanceData(data);
     }catch(error){
+      showToast(error.response.data.error,'Error');
       console.error("Error fetching attendance data:", error);
     }
   };

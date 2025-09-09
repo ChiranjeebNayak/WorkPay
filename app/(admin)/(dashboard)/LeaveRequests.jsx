@@ -4,13 +4,15 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useContextData } from '../../../context/EmployeeContext';
 import { getToken } from '../../../services/ApiService';
 import { formatDay } from "../../../utils/TimeUtils";
 
 function LeaveRequests() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('pendingLeaves');
-  const [data,setData] = useState([])
+  const [data,setData] = useState([]);
+  const {showToast} = useContextData();
 
   const fetchLeaveRequest = async ()=>{
     try{
@@ -23,6 +25,7 @@ function LeaveRequests() {
       setData(data);
       console.log(data)
     }catch(error){
+      showToast(error.response.data.error,'Error');
       console.error("Error fetching leaves request",error)
     }
   }
@@ -40,9 +43,11 @@ function LeaveRequests() {
       });
       const data = response.data;
       if(data.message){
+        showToast(data.message,"Success")
         fetchLeaveRequest();
       }
     }catch(error){
+       showToast(error.response.data.error,"Error")
       console.error("Error fetching leaves request",error)
     }
   }

@@ -5,8 +5,9 @@ import axios from 'axios';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useContextData } from "../../../context/EmployeeContext";
 import { getToken } from '../../../services/ApiService';
 
 function OfficeSettings() {
@@ -21,6 +22,7 @@ function OfficeSettings() {
   const [showEnd, setShowEnd] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const {showToast} = useContextData()
 
   const fetchOfficeDetails = async () => {
     try {
@@ -40,6 +42,7 @@ function OfficeSettings() {
         longitude: data.longitude || null
       });
     } catch (error) {
+      showToast(error.response.data.error,"Error")
       console.error('Error fetching office details:', error);
     }
   }
@@ -67,10 +70,10 @@ function OfficeSettings() {
           authorization: `Bearer ${await getToken()}`
         }
       });
-      Alert.alert('Success', 'Office settings updated successfully!');
+      showToast( 'Office settings updated successfully!','Success');
     } catch (error) {
       console.error('Error updating office settings:', error);
-      Alert.alert('Error', 'Failed to update office settings');
+      showToast( 'Failed to update office settings','Error');
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +86,7 @@ function OfficeSettings() {
       // Request location permissions
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Permission to access location was denied');
+        Show('Permission to access location was denied', 'Warning');
         return;
       }
 
@@ -96,10 +99,10 @@ function OfficeSettings() {
         longitude: location.coords.longitude
       }));
       
-      Alert.alert('Success', 'Current location captured successfully!');
+      showToast( 'Current location captured successfully!','Success');
     } catch (error) {
       console.error('Error getting location:', error);
-      Alert.alert('Error', 'Failed to get current location');
+      showToast('Failed to get current location','Error');
     } finally {
       setIsLoading(false);
     }

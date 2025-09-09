@@ -13,6 +13,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useContextData } from '../../../context/EmployeeContext';
 import { getToken } from '../../../services/ApiService';
 import {
   calculateTotalHours,
@@ -68,7 +69,8 @@ function EmployeeDetails() {
   const [employee, setEmployee] = useState(null);
   const [attendanceData,setAttendanceData] = useState([]);
   const [leavesData,setLeavesData] = useState([]);
-  const [paymentsData,setPaymentsData]=  useState(null)
+  const [paymentsData,setPaymentsData]=  useState(null);
+    const {showToast} = useContextData();
 
     const fetchEmployeeDetails = async () => {
     try {
@@ -79,7 +81,7 @@ function EmployeeDetails() {
       });
       setEmployee(response.data.data);
     } catch (error) {
-      console.error('Error fetching employee details:', error);
+      showToast(error.response.data.error,'Error');
     }
   }
 
@@ -95,7 +97,7 @@ function EmployeeDetails() {
       const data = response.data;
       setAttendanceData(data);
     }catch(error){
-      console.error("Error fetching attendance data:", error);
+     showToast(error.response.data.error,'Error');
     }
   };
 
@@ -121,7 +123,7 @@ const fetchLeavesData = async ()=>{
       const data = response.data;
       setLeavesData(data)
     }catch(error){
-      console.error("Error fetching attendance data:", error);
+      showToast(error.response.data.error,'Error');
     }
 }
 
@@ -142,7 +144,7 @@ const fetchPaymentsData = async ()=>{
       const data = response.data;
       setPaymentsData(data)
     }catch(error){
-      console.error("Error fetching attendance data:", error);
+      showToast(error.response.data.error,'Error');
     }
 }
 

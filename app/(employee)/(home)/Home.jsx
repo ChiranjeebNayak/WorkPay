@@ -34,6 +34,7 @@ function Home() {
       setDashboardDetails(data);
       setEmployeeData(data.employeeDetails)
     } catch (error) {
+      showToast(error.response.data.error,'Error');
       console.error('Error fetching dashboard details:', error);
     }
   }

@@ -18,6 +18,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useContextData } from "../../../context/EmployeeContext";
 import { getToken } from '../../../services/ApiService';
 
 function EmployeeManagement() {
@@ -28,6 +29,7 @@ function EmployeeManagement() {
   const [modalVisible, setModalVisible] = useState(false);
   const [isAdding, setIsAdding] = useState(true);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const {showToast} = useContextData();
   
   // Date picker states
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -54,6 +56,7 @@ function EmployeeManagement() {
       setEmployees(response.data);
       setFilteredEmployees(response.data);
     } catch (error) {
+      showToast(error.response.data.error,'Error');
       console.error('Error fetching employees:', error);
     }
   }
@@ -77,9 +80,11 @@ function EmployeeManagement() {
         }
       });
       console.log('Employee added:', response.data.data);
+      showToast(response.data.message,"Success")
       setModalVisible(false);
       fetchEmployees();
     } catch (error) {
+        showToast(error.response.data.error,"Error")
       console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.joinedDate,formData.officeId);
       console.error('Error adding employee:', error);
     }
@@ -103,9 +108,11 @@ function EmployeeManagement() {
         }
       });
       console.log('Employee edited:', response.data.data);
+       showToast(response.data.message,"Success")
       setModalVisible(false);
       fetchEmployees();
     } catch (error) {
+       showToast(error.response.data.error,"Error")
       console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.joinedDate,formData.officeId);
       console.error('Error editing employee:', error);
     }
@@ -125,8 +132,10 @@ function EmployeeManagement() {
                 }
               });
               console.log('Employee deleted:', response.data.message);
+              showToast(response.data.message,"Success")
               fetchEmployees();
             } catch (error) {
+               showToast(error.response.data.error,"Error")
               console.error('Error deleting employee:', error);
             }
           }
@@ -216,23 +225,23 @@ function EmployeeManagement() {
 
   const validateForm = () => {
     if (!formData.name.trim()) {
-      Alert.alert('Error', 'Please enter employee name');
+      showToast('Please enter employee name','Error');
       return false;
     }
     if (!formData.phone.trim()) {
-      Alert.alert('Error', 'Please enter phone number');
+      showToast( 'Please enter phone number','Error');
       return false;
     }
     if (!formData.baseSalary || isNaN(formData.baseSalary)) {
-      Alert.alert('Error', 'Please enter valid base salary');
+      showToast( 'Please enter valid base salary','Error');
       return false;
     }
     if (!formData.overtimeRate || isNaN(formData.overtimeRate)) {
-      Alert.alert('Error', 'Please enter valid overtime rate');
+      showToast('Error', 'Please enter valid overtime rate','Error');
       return false;
     }
     if (!formData.joinedDate.trim()) {
-      Alert.alert('Error', 'Please select joined date');
+      showToast('Please select joined date','Error');
       return false;
     }
     return true;

@@ -16,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useContextData } from "../../../context/EmployeeContext";
 import { getToken } from "../../../services/ApiService";
 
 function HolidayManagement() {
@@ -27,6 +28,7 @@ function HolidayManagement() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+    const {showToast} = useContextData()
 
   const fetchHolidays = async () => {
     try {
@@ -51,7 +53,7 @@ function HolidayManagement() {
       setHolidays(transformedHolidays);
     } catch (error) {
       console.error('Error fetching holidays:', error);
-      Alert.alert('Error', 'Failed to fetch holidays');
+      showToast( 'Failed to fetch holidays','Error');
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +61,7 @@ function HolidayManagement() {
 
   const addHoliday = async () => {
     if (!holidayDate || !holidayName.trim()) {
-      Alert.alert('Error', 'Please select a date and enter holiday name');
+      showToast('Please select a date and enter holiday name','Error');
       return;
     }
 
@@ -74,7 +76,7 @@ function HolidayManagement() {
         }
       });
 
-      Alert.alert('Success', 'Holiday added successfully!');
+      showToast( 'Holiday added successfully!','Success');
       setHolidayDate(null);
       setHolidayName("");
       setModalVisible(false);
@@ -83,7 +85,7 @@ function HolidayManagement() {
       await fetchHolidays();
     } catch (error) {
       console.error('Error adding holiday:', error);
-      Alert.alert('Error', 'Failed to add holiday');
+      showToast( 'Failed to add holiday','Error');
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +115,7 @@ function HolidayManagement() {
               await fetchHolidays();
             } catch (error) {
               console.error('Error deleting holiday:', error);
-              Alert.alert('Error', 'Failed to delete holiday');
+              showToast('Failed to delete holiday','Error');
             } finally {
               setIsLoading(false);
             }

@@ -70,6 +70,7 @@ function Leave() {
       });
       setLeaveHistory(response.data.leaves)
     }catch(error){
+      showToast(error.response.data.error,'Error');
        console.error('Error fetching Leaves History:', error);
     }
   }

@@ -5,7 +5,6 @@ import axios from 'axios'
 import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
-  Alert,
   FlatList,
   Modal,
   StatusBar,
@@ -16,6 +15,7 @@ import {
   View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useContextData } from "../../context/EmployeeContext"
 import { getToken } from "../../services/ApiService"
 
 function AdminSalaryManagement() {
@@ -32,7 +32,8 @@ function AdminSalaryManagement() {
   const [processingAdvance, setProcessingAdvance] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [selectedYear, setSelectedYear] = useState(currentYear);
-  const [paymentData,setPaymentData] = useState([])
+  const [paymentData,setPaymentData] = useState([]);
+  const {showToast} = useContextData();
 
 
    const fetchPaymentHistory = async () => {
@@ -46,6 +47,7 @@ function AdminSalaryManagement() {
       const data = response.data;
       setPaymentData(data.payments);
     } catch (err) {
+      showToast(err.response.data.error,'Error');
       console.log(err);
     } finally {
       setLoading(false);
@@ -133,8 +135,10 @@ function AdminSalaryManagement() {
         }
       });
       const data = response.data;
+      showToast(data.message,"Success");
       console.log(data)
     } catch (err) {
+      showToast(err.response.data.error,"Error")
       console.log(err);
     }
 
@@ -152,10 +156,10 @@ function AdminSalaryManagement() {
         - calculateMonthTotals(selectedEmployee.transactions).deduction
         -calculateMonthTotals(selectedEmployee.transactions).advance
       )){
-            Alert.alert('Error', `Advance amount cannot exceed ₹${(selectedEmployee.baseSalary + 
+            showToast( `Advance amount cannot exceed ₹${(selectedEmployee.baseSalary + 
         calculateMonthTotals(selectedEmployee.transactions).overtime 
         - calculateMonthTotals(selectedEmployee.transactions).deduction
-        -calculateMonthTotals(selectedEmployee.transactions).advance).toLocaleString()}`)
+        -calculateMonthTotals(selectedEmployee.transactions).advance).toLocaleString()}`,'Error')
       return
       }
       try {
@@ -174,11 +178,13 @@ function AdminSalaryManagement() {
       });
       const data = response.data;
       if(data.message){
+        showToast(data.message,"Success");
         fetchPaymentHistory();
         setAdvanceAmount(null);
         setAdvanceModalVisible(false)
       }
     } catch (err) {
+      showToast(err.response.data.error,"Error");
       console.log(err);
     }
       

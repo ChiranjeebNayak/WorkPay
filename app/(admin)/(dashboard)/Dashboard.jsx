@@ -7,12 +7,14 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useContextData } from '../../../context/EmployeeContext';
 import { getToken, removeToken } from '../../../services/ApiService';
 import { formatDay } from "../../../utils/TimeUtils";
 
 function Dashboard() {
   const router = useRouter();
   const [data, setData] = useState(null);
+  const {showToast} = useContextData()
 
   const dashboardDetails = async () => {
     try {
@@ -24,6 +26,7 @@ function Dashboard() {
       const data = response.data;
       setData(data);
     } catch (error) {
+      showToast(error.response.data.error,'Error');
       console.error('Error fetching dashboard details:', error);
       return null;
     }
