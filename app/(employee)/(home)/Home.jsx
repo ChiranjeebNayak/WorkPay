@@ -14,7 +14,7 @@ function Home() {
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
   const [dashboardDetails, setDashboardDetails] = useState(null);
-  const {setEmployeeData} = useContextData();
+  const {setEmployeeData ,showToast} = useContextData();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -53,9 +53,17 @@ function Home() {
       });
       const data = response.data;
       if(data){
+        showToast(data.message,"Success");
         await fetchDashboardDetails();
       }
     } catch (error) {
+      if(error.response.data.message){
+showToast(error.response.data.message,"Warning")
+      }
+      if(error.response.data.error){
+        showToast(error.response.data.error,"Error")
+      }
+      
       console.error('Error fetching dashboard details:', error);
     }
   }

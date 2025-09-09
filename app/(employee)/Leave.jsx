@@ -3,7 +3,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   Modal,
   Platform,
   ScrollView,
@@ -30,7 +29,7 @@ function Leave() {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const currentYear = new Date().getFullYear();
-  const {employeeData} = useContextData()
+  const {employeeData,showToast} = useContextData();
 
   const fetchHolidays = async () => {
     try {
@@ -53,6 +52,7 @@ function Leave() {
       
       setHolidaysData(transformedHolidays);
     } catch (error) {
+      showToast(error.response.data.error,"Error")
       console.error('Error fetching holidays:', error);
       // Keep default empty array if API fails
       setHolidaysData([]);
@@ -81,7 +81,7 @@ function Leave() {
 
   const applyLeave = async () => {
     if (!startDate || !endDate || !description.trim()) {
-      Alert.alert('Missing Information', 'Please fill in all fields');
+      showToast('Please fill in all fields',"Warning");
       return;
     }
     
@@ -100,9 +100,10 @@ function Leave() {
     setEndDate('');
     setDescription('');
     setModalVisible(false);
-    Alert.alert('Success', 'Leave application submitted successfully');
+    showToast('Leave application submitted successfully',"Success");
       }
     }catch(error){
+      showToast(error.response.data.error,"Error")
        console.error('Error Applying leave:', error);
     }
     

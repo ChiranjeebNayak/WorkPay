@@ -3,7 +3,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import axios from "axios";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useContextData } from "../../../context/EmployeeContext";
 import { getToken } from "../../../services/ApiService";
@@ -19,23 +19,28 @@ function Profile() {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const {employeeData} = useContextData();
+    const {employeeData,showToast} = useContextData();
 
 
   const handlePasswordUpdate = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all password fields");
+       showToast("Please fill in all password fields","Warning")
       return;
     }
     
     if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "New passwords do not match");
+       showToast("New passwords do not match","Warning")
       return;
     }
     
     if (newPassword.length < 6) {
-      Alert.alert("Error", "New password must be at least 6 characters long");
+        showToast("New password must be at least 6 characters long","Warning")
       return;
+    }
+
+    if(newPassword === oldPassword){
+      showToast("New Password cannot be same as Old Password","Error")
+      return
     }
 
     try{
@@ -50,19 +55,14 @@ function Profile() {
              }
       )
       if(response.data.message){
-       Alert.alert("Success", "Password updated successfully", [
-      {
-        text: "OK",
-        onPress: () => {
-          setShowPasswordSection(false);
+        showToast(response.data.message,"Success")
+       setShowPasswordSection(false);
           setOldPassword("");
           setNewPassword("");
           setConfirmPassword("");
-        }
-      }
-    ]);
   }
     }catch(error){
+      showToast(error.response.data.error,"Error")
        console.error('Error Updating Password:', error);
     }
 
