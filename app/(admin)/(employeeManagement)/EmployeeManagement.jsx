@@ -50,7 +50,7 @@ function EmployeeManagement() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await axios.get(`${url}api/employees/getAll`,{
+      const response = await axios.get(`${url}/api/employees/getAll`,{
         headers: {
           authorization: `Bearer ${await getToken()}`
         }

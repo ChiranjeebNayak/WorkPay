@@ -48,37 +48,66 @@ function OfficeSettings() {
     }
   }
 
-  const updateOfficeSettings = async () => {
-    try {
-      setIsLoading(true);
+const updateOfficeSettings = async () => {
+  try {
+    setIsLoading(true);
+    
+    // Convert local time to UTC timestamp
+    const convertToUTC = (date) => {
+      if (!date) return null;
       
-      // Format time to send only time part without timezone conversion
-      const formatTimeForAPI = (date) => {
-        if (!date) return null;
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        return `1970-01-01T${hours}:${minutes}:00.000Z`;
-      };
+      // Create base UTC date for today
+      const utcDate = new Date();
+      utcDate.setUTCHours(0, 0, 0, 0); // Reset to start of day
       
-      const response = await axios.put(`${url}/api/offices/`, {
-        checkin: formatTimeForAPI(formData.startTime),
-        checkout: formatTimeForAPI(formData.endTime),
-        breakTime: formData.breakTime,
-        latitude: formData.latitude,
-        longitude: formData.longitude
-      }, {
-        headers: {
-          authorization: `Bearer ${await getToken()}`
-        }
-      });
-      showToast( 'Office settings updated successfully!','Success');
-    } catch (error) {
-      console.error('Error updating office settings:', error);
-      showToast( 'Failed to update office settings','Error');
-    } finally {
-      setIsLoading(false);
+      // Set hours and minutes from input date
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      
+      // Create new date with same day but updated hours/minutes
+      const convertedDate = new Date(utcDate);
+      convertedDate.setUTCHours(hours - 5, minutes - 30, 0, 0); // Subtract 5:30 for IST offset
+      
+      return convertedDate.toISOString();
+    };
+    
+    // Debug logs
+    console.log('Input times:', {
+      startTime: formData.startTime,
+      endTime: formData.endTime
+    });
+    
+    const checkinUTC = convertToUTC(formData.startTime);
+    const checkoutUTC = convertToUTC(formData.endTime);
+    
+    // Debug logs
+    console.log('Converted UTC times:', {
+      checkin: checkinUTC,
+      checkout: checkoutUTC
+    });
+
+    const response = await axios.put(`${url}/api/offices/`, {
+      checkin: checkinUTC,
+      checkout: checkoutUTC,
+      breakTime: formData.breakTime,
+      latitude: formData.latitude,
+      longitude: formData.longitude
+    }, {
+      headers: {
+        authorization: `Bearer ${await getToken()}`
+      }
+    });
+
+    if(response.data.message){
+      showToast('Office settings updated successfully!', 'Success');
     }
+  } catch (error) {
+    console.error('Error updating office settings:', error);
+    showToast('Failed to update office settings', 'Error');
+  } finally {
+    setIsLoading(false);
   }
+};
 
   const getCurrentLocation = async () => {
     try {
@@ -102,7 +131,7 @@ function OfficeSettings() {
       
       showToast( 'Current location captured successfully!','Success');
     } catch (error) {
-      console.error('Error getting location:', error);
+      console.error('Error getting location:', error.response.data.error);
       showToast('Failed to get current location','Error');
     } finally {
       setIsLoading(false);
