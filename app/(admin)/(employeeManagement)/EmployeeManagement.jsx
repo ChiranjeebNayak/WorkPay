@@ -234,6 +234,11 @@ function EmployeeManagement() {
       showToast( 'Please enter phone number','Error');
       return false;
     }
+
+    if (formData.phone.trim().length !== 10 || !/^\d{10}$/.test(formData.phone.trim())) {
+      showToast( 'Please enter valid 10-digit phone number','Error');
+      return false;
+    }
     if (!formData.baseSalary || isNaN(formData.baseSalary)) {
       showToast( 'Please enter valid base salary','Error');
       return false;
