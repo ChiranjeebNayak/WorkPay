@@ -130,7 +130,7 @@ function Dashboard() {
               <AntDesign name="right" size={16} color="#4A9EFF" />
             </TouchableOpacity>
           </View>
-          <View style={styles.recentActivityContainer}>
+         {data?.pendingLeaves.length > 0 && <View style={styles.recentActivityContainer}>
             {data?.pendingLeaves.map((request, index) => (
               <View key={index} style={styles.recentActivityItem}>
                 <View style={{gap:5, flex: 1}}>
@@ -142,7 +142,7 @@ function Dashboard() {
                 </View>
               </View>
             ))}
-          </View>
+          </View>}
         </View>
 
         </ScrollView>

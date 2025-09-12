@@ -133,7 +133,7 @@ useEffect(()=>{
               </View>
               
               <View style={styles.requestActions}>
-                {activeTab === 'pending' ? (
+                {activeTab === 'pendingLeaves' ? (
                   <View style={styles.actionButtons}>
                     <TouchableOpacity 
                       style={[styles.actionButton, styles.acceptButton]}
