@@ -70,10 +70,10 @@ function Leave() {
           authorization: `Bearer ${await getToken()}`
         }
       });
-      setLeaveHistory(response.data.leaves)
+      setLeaveHistory(response.data.leaves);
     }catch(error){
       showToast(error.response.data.error,'Error');
-       console.error('Error fetching Leaves History:', error);
+       console.error('Error fetching Leaves History:', error.response.data.error);
     }
   }
 
@@ -104,10 +104,11 @@ function Leave() {
     setDescription('');
     setModalVisible(false);
     showToast('Leave application submitted successfully',"Success");
+    fetchLeavesHistory();
       }
     }catch(error){
       showToast(error.response.data.error,"Error")
-       console.error('Error Applying leave:', error);
+       console.error('Error Applying leave:', error.response.data.error);
     }
     
    
