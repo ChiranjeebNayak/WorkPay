@@ -18,11 +18,11 @@ import { useContextData } from '../../context/EmployeeContext';
 import { getToken } from '../../services/ApiService';
 import { formatDay } from "../../utils/TimeUtils";
 
-
 function Leave() {
   const [modalVisible, setModalVisible] = useState(false);
   const [isLeave, setIsLeave] = useState(true);
   const [holidaysData, setHolidaysData] = useState([]);
+  const [rawHolidays, setRawHolidays] = useState([]); // Store raw holiday data for validation
   const [isLoadingHolidays, setIsLoadingHolidays] = useState(false);
   const [leaveHistory, setLeaveHistory] = useState([]);
   const [startDate, setStartDate] = useState('');
@@ -30,8 +30,109 @@ function Leave() {
   const [description, setDescription] = useState('');
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [leavePreview, setLeavePreview] = useState(null); // Show holiday preview
   const currentYear = new Date().getFullYear();
-  const {employeeData,showToast} = useContextData();
+  const {employeeData, showToast} = useContextData();
+
+  // Helper function to format date to YYYY-MM-DD for comparison
+  const formatDateForComparison = (date) => {
+    return new Date(date).toISOString().slice(0, 10);
+  };
+
+  // Helper function to check if a date is a holiday
+  const isHoliday = (dateStr) => {
+    return rawHolidays.some(holiday => 
+      formatDateForComparison(holiday.date) === dateStr
+    );
+  };
+
+  // Helper function to get holidays between dates (inclusive)
+  const getHolidaysBetweenDates = (startDateStr, endDateStr) => {
+    const start = new Date(startDateStr);
+    const end = new Date(endDateStr);
+    const holidaysInRange = [];
+    
+    const current = new Date(start);
+    while (current <= end) {
+      const currentDateStr = formatDateForComparison(current);
+      const holiday = rawHolidays.find(h => 
+        formatDateForComparison(h.date) === currentDateStr
+      );
+      if (holiday) {
+        holidaysInRange.push({
+          date: currentDateStr,
+          name: holiday.description || holiday.name
+        });
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return holidaysInRange;
+  };
+
+  // Calculate leave preview when dates change
+  const calculateLeavePreview = (startDateStr, endDateStr) => {
+    if (!startDateStr || !endDateStr) {
+      setLeavePreview(null);
+      return;
+    }
+
+    // Check if start or end date is a holiday
+    const startIsHoliday = isHoliday(startDateStr);
+    const endIsHoliday = isHoliday(endDateStr);
+
+    if (startIsHoliday || endIsHoliday) {
+      setLeavePreview({
+        error: true,
+        message: startIsHoliday 
+          ? "Start date is a holiday. Please select a different date."
+          : "End date is a holiday. Please select a different date.",
+        type: 'boundary_holiday'
+      });
+      return;
+    }
+
+    // Calculate total days
+    const start = new Date(startDateStr);
+    const end = new Date(endDateStr);
+    const totalCalendarDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    // Get holidays in between
+    const holidaysInRange = getHolidaysBetweenDates(startDateStr, endDateStr);
+    const totalLeaveDays = totalCalendarDays - holidaysInRange.length;
+
+    // Special case: Single day leave on holiday
+    if (startDateStr === endDateStr && holidaysInRange.length > 0) {
+      setLeavePreview({
+        error: true,
+        message: "Selected date is a holiday. No leave application needed.",
+        type: 'single_day_holiday'
+      });
+      return;
+    }
+
+    // All days are holidays
+    if (totalLeaveDays <= 0) {
+      setLeavePreview({
+        error: true,
+        message: "Selected period contains only holidays. No leave application needed.",
+        holidaysExcluded: holidaysInRange,
+        type: 'all_holidays'
+      });
+      return;
+    }
+
+    // Valid leave period
+    setLeavePreview({
+      error: false,
+      totalCalendarDays,
+      totalLeaveDays,
+      holidaysExcluded: holidaysInRange,
+      leaveBalance: employeeData.leaveBalance,
+      paidDays: Math.min(totalLeaveDays, employeeData.leaveBalance),
+      unpaidDays: Math.max(0, totalLeaveDays - employeeData.leaveBalance)
+    });
+  };
 
   const fetchHolidays = async () => {
     try {
@@ -42,8 +143,16 @@ function Leave() {
         }
       });
       
-      // Transform the response to match the frontend format
+      // Store raw holidays for validation
+      const allHolidays = [];
+      response.data.forEach(monthItem => {
+        monthItem.holidays.forEach(holiday => {
+          allHolidays.push(holiday);
+        });
+      });
+      setRawHolidays(allHolidays);
       
+      // Transform the response to match the frontend format
       const transformedHolidays = response.data.map(monthItem => ({
         month: `${monthItem.month} ${currentYear}`,
         holidays: monthItem.holidays.map(holiday => ({
@@ -54,64 +163,84 @@ function Leave() {
       
       setHolidaysData(transformedHolidays);
     } catch (error) {
-      showToast(error.response.data.error,"Error")
+      showToast(error.response?.data?.error || "Failed to fetch holidays", "Error");
       console.error('Error fetching holidays:', error);
-      // Keep default empty array if API fails
       setHolidaysData([]);
+      setRawHolidays([]);
     } finally {
       setIsLoadingHolidays(false);
     }
   };
 
-  const fetchLeavesHistory = async ()=>{
-    try{
-       const response = await axios.get(`${url}/api/leaves/employee-leaves?year=${currentYear}`, {
+  const fetchLeavesHistory = async () => {
+    try {
+      const response = await axios.get(`${url}/api/leaves/employee-leaves?year=${currentYear}`, {
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
       });
       setLeaveHistory(response.data.leaves);
-    }catch(error){
-      showToast(error.response.data.error,'Error');
-       console.error('Error fetching Leaves History:', error.response.data.error);
+    } catch (error) {
+      showToast(error.response?.data?.error || "Failed to fetch leave history", 'Error');
+      console.error('Error fetching Leaves History:', error);
     }
-  }
+  };
 
   useEffect(() => {
     fetchHolidays();
     fetchLeavesHistory();
   }, []);
 
+  // Recalculate preview when dates change
+  useEffect(() => {
+    if (startDate && endDate && rawHolidays.length > 0) {
+      calculateLeavePreview(startDate, endDate);
+    } else {
+      setLeavePreview(null);
+    }
+  }, [startDate, endDate, rawHolidays]);
+
   const applyLeave = async () => {
     if (!startDate || !endDate || !description.trim()) {
-      showToast('Please fill in all fields',"Warning");
+      showToast('Please fill in all fields', "Warning");
+      return;
+    }
+
+    // Frontend validation before API call
+    if (leavePreview?.error) {
+      showToast(leavePreview.message, "Error");
+      return;
+    }
+
+    if (!leavePreview || leavePreview.totalLeaveDays <= 0) {
+      showToast('Invalid leave period', "Error");
       return;
     }
     
-  try{
-       const response = await axios.post(`${url}/api/leaves/apply`,{
-        reason:description,
-        startDate:startDate,
-        endDate:endDate
-       }, {
+    try {
+      const response = await axios.post(`${url}/api/leaves/apply`, {
+        reason: description,
+        startDate: startDate,
+        endDate: endDate
+      }, {
         headers: {
           authorization: `Bearer ${await getToken()}`,
         }
       });
-      if(response.data.message){
-    setStartDate('');
-    setEndDate('');
-    setDescription('');
-    setModalVisible(false);
-    showToast('Leave application submitted successfully',"Success");
-    fetchLeavesHistory();
+      
+      if (response.data.message) {
+        setStartDate('');
+        setEndDate('');
+        setDescription('');
+        setLeavePreview(null);
+        setModalVisible(false);
+        showToast('Leave application submitted successfully', "Success");
+        fetchLeavesHistory();
       }
-    }catch(error){
-      showToast(error.response.data.error,"Error")
-       console.error('Error Applying leave:', error.response.data.error);
+    } catch (error) {
+      showToast(error.response?.data?.error || "Failed to apply leave", "Error");
+      console.error('Error Applying leave:', error);
     }
-    
-   
   };
 
   const getStatusColor = (status) => {
@@ -134,6 +263,14 @@ function Leave() {
 
   const getTypeColor = (type) => {
     return type === 'PAID' ? '#1e90ff' : '#ff6b35';
+  };
+
+  const resetModal = () => {
+    setStartDate('');
+    setEndDate('');
+    setDescription('');
+    setLeavePreview(null);
+    setModalVisible(false);
   };
 
   return (
@@ -172,7 +309,7 @@ function Leave() {
               <View style={styles.progressBarBg}>
                 <View style={[styles.progressBarFill, { width: `${((leaveHistory.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0))/(employeeData.leaveBalance + leaveHistory.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)))*100}%` }]} />
               </View>
-              <Text style={styles.progressText}>{((leaveHistory.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0))/(employeeData.leaveBalance + leaveHistory.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)))*100}% used</Text>
+              <Text style={styles.progressText}>{Math.round(((leaveHistory.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0))/(employeeData.leaveBalance + leaveHistory.filter((i)=>i.status === "APPROVED" && i.type === "PAID").reduce((acc,i)=>acc+i.totalDays,0)))*100) || 0}% used</Text>
             </View>
           </View>
         </View>
@@ -314,111 +451,183 @@ function Leave() {
         animationType="slide"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={() => resetModal()}
       >
         <View style={styles.modalBackground}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Apply for Leave</Text>
-              <TouchableOpacity 
-                onPress={() => setModalVisible(false)}
-                style={styles.closeButton}
-              >
-                <MaterialCommunityIcons name="close" size={24} color="#8a9ba8" />
-              </TouchableOpacity>
-            </View>
-            
-            {/* Start Date Picker */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>From Date</Text>
-              <TouchableOpacity
-                style={styles.dateInput}
-                onPress={() => setShowStartPicker(true)}
-              >
-                <MaterialCommunityIcons name="calendar-outline" size={20} color="#8a9ba8" />
-                <Text style={[styles.dateText, { color: startDate ? '#fff' : '#8a9ba8' }]}>
-                  {startDate || 'Select start date'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+          <ScrollView contentContainerStyle={styles.modalScrollContainer} showsVerticalScrollIndicator={false}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Apply for Leave</Text>
+                <TouchableOpacity 
+                  onPress={() => resetModal()}
+                  style={styles.closeButton}
+                >
+                  <MaterialCommunityIcons name="close" size={24} color="#8a9ba8" />
+                </TouchableOpacity>
+              </View>
+              
+              {/* Start Date Picker */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>From Date</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.dateInput,
+                    startDate && isHoliday(startDate) && styles.errorInput
+                  ]}
+                  onPress={() => setShowStartPicker(true)}
+                >
+                  <MaterialCommunityIcons name="calendar-outline" size={20} color="#8a9ba8" />
+                  <Text style={[styles.dateText, { color: startDate ? '#fff' : '#8a9ba8' }]}>
+                    {startDate || 'Select start date'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
-            {showStartPicker && (
-              <DateTimePicker
-                value={startDate ? new Date(startDate) : new Date()}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={(event, selectedDate) => {
-                  setShowStartPicker(false);
-                  if (selectedDate) setStartDate(selectedDate.toISOString().slice(0, 10));
-                }}
-                minimumDate={new Date()}
-                maximumDate={endDate ? new Date(endDate) : undefined}
-              />
-            )}
+              {showStartPicker && (
+                <DateTimePicker
+                  value={startDate ? new Date(startDate) : new Date()}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={(event, selectedDate) => {
+                    setShowStartPicker(false);
+                    if (selectedDate) setStartDate(selectedDate.toISOString().slice(0, 10));
+                  }}
+                  minimumDate={new Date()}
+                  maximumDate={endDate ? new Date(endDate) : undefined}
+                />
+              )}
 
-            {/* End Date Picker */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>To Date</Text>
-              <TouchableOpacity
-                style={styles.dateInput}
-                onPress={() => setShowEndPicker(true)}
-              >
-                <MaterialCommunityIcons name="calendar-outline" size={20} color="#8a9ba8" />
-                <Text style={[styles.dateText, { color: endDate ? '#fff' : '#8a9ba8' }]}>
-                  {endDate || 'Select end date'}
-                </Text>
-              </TouchableOpacity>
+              {/* End Date Picker */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>To Date</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.dateInput,
+                    endDate && isHoliday(endDate) && styles.errorInput
+                  ]}
+                  onPress={() => setShowEndPicker(true)}
+                >
+                  <MaterialCommunityIcons name="calendar-outline" size={20} color="#8a9ba8" />
+                  <Text style={[styles.dateText, { color: endDate ? '#fff' : '#8a9ba8' }]}>
+                    {endDate || 'Select end date'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {showEndPicker && (
+                <DateTimePicker
+                  value={endDate ? new Date(endDate) : new Date()}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={(event, selectedDate) => {
+                    setShowEndPicker(false);
+                    if (selectedDate) setEndDate(selectedDate.toISOString().slice(0, 10));
+                  }}
+                  minimumDate={startDate ? new Date(startDate) : new Date()}
+                />
+              )}
+
+              {/* Leave Preview */}
+              {leavePreview && (
+                <View style={[
+                  styles.previewContainer, 
+                  leavePreview.error ? styles.errorPreview : styles.successPreview
+                ]}>
+                  <View style={styles.previewHeader}>
+                    <MaterialCommunityIcons 
+                      name={leavePreview.error ? "alert-circle" : "information"} 
+                      size={20} 
+                      color={leavePreview.error ? "#FF5252" : "#1e90ff"} 
+                    />
+                    <Text style={[
+                      styles.previewTitle,
+                      { color: leavePreview.error ? "#FF5252" : "#1e90ff" }
+                    ]}>
+                      {leavePreview.error ? "Invalid Leave Period" : "Leave Summary"}
+                    </Text>
+                  </View>
+                  
+                  {leavePreview.error ? (
+                    <Text style={styles.errorMessage}>{leavePreview.message}</Text>
+                  ) : (
+                    <View style={styles.previewDetails}>
+                      <View style={styles.previewRow}>
+                        <Text style={styles.previewLabel}>Total Calendar Days:</Text>
+                        <Text style={styles.previewValue}>{leavePreview.totalCalendarDays}</Text>
+                      </View>
+                      <View style={styles.previewRow}>
+                        <Text style={styles.previewLabel}>Actual Leave Days:</Text>
+                        <Text style={styles.previewValue}>{leavePreview.totalLeaveDays}</Text>
+                      </View>
+                      {leavePreview.holidaysExcluded.length > 0 && (
+                        <View style={styles.previewRow}>
+                          <Text style={styles.previewLabel}>Holidays Excluded:</Text>
+                          <Text style={styles.previewValue}>{leavePreview.holidaysExcluded.length}</Text>
+                        </View>
+                      )}
+                      <View style={styles.previewDivider} />
+                      <View style={styles.previewRow}>
+                        <Text style={styles.previewLabel}>Total Leave Days:</Text>
+                        <Text style={[styles.previewValue, { color: '#00E676' }]}>{leavePreview.paidDays}</Text>
+                      </View>
+                      {leavePreview.unpaidDays > 0 && (
+                        <View style={styles.previewRow}>
+                          <Text style={styles.previewLabel}>Unpaid Leave Days:</Text>
+                          <Text style={[styles.previewValue, { color: '#FF9800' }]}>{leavePreview.unpaidDays}</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
+                  {leavePreview.holidaysExcluded && leavePreview.holidaysExcluded.length > 0 && (
+                    <View style={styles.holidaysList}>
+                      <Text style={styles.holidaysListTitle}>Holidays in Period:</Text>
+                      {leavePreview.holidaysExcluded.map((holiday, idx) => (
+                        <Text key={idx} style={styles.holidayItem}>
+                          • {holiday.date}: {holiday.name}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* Description Input */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Reason for Leave</Text>
+                <TextInput
+                  style={styles.descriptionInput}
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="Enter the reason for your leave request..."
+                  placeholderTextColor="#8a9ba8"
+                  multiline={true}
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => resetModal()}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[
+                    styles.submitButton,
+                    (leavePreview?.error || !leavePreview) && styles.disabledButton
+                  ]} 
+                  onPress={applyLeave}
+                  disabled={leavePreview?.error || !leavePreview}
+                >
+                  <MaterialCommunityIcons name="send-outline" size={18} color="#fff" />
+                  <Text style={styles.submitButtonText}>Submit</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-
-            {showEndPicker && (
-              <DateTimePicker
-                value={endDate ? new Date(endDate) : new Date()}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={(event, selectedDate) => {
-                  setShowEndPicker(false);
-                  if (selectedDate) setEndDate(selectedDate.toISOString().slice(0, 10));
-                }}
-                minimumDate={startDate ? new Date(startDate) : new Date()}
-              />
-            )}
-
-            {/* Description Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Reason for Leave</Text>
-              <TextInput
-                style={styles.descriptionInput}
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Enter the reason for your leave request..."
-                placeholderTextColor="#8a9ba8"
-                multiline={true}
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity 
-                style={styles.cancelButton} 
-                onPress={() => {
-                  setStartDate('');
-                  setEndDate('');
-                  setDescription('');
-                  setModalVisible(false);
-                }}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.submitButton} 
-                onPress={applyLeave}
-              >
-                <MaterialCommunityIcons name="send-outline" size={18} color="#fff" />
-                <Text style={styles.submitButtonText}>Submit</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
     </SafeAreaView>
@@ -732,9 +941,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
+  modalScrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalContainer: {
     width: '100%',
-    maxWidth: 400,
     backgroundColor: '#1a2332',
     borderRadius: 24,
     padding: 24,
@@ -782,6 +995,10 @@ const styles = StyleSheet.create({
     borderColor: '#2a3441',
     gap: 12,
   },
+  errorInput: {
+    borderColor: '#FF5252',
+    backgroundColor: 'rgba(255, 82, 82, 0.1)',
+  },
   dateText: {
     fontSize: 15,
     flex: 1,
@@ -798,10 +1015,83 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: 'top',
   },
+  previewContainer: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    width:"100%"
+  },
+  successPreview: {
+    backgroundColor: 'rgba(30, 144, 255, 0.1)',
+    borderColor: 'rgba(30, 144, 255, 0.3)',
+  },
+  errorPreview: {
+    backgroundColor: 'rgba(255, 82, 82, 0.1)',
+    borderColor: 'rgba(255, 82, 82, 0.3)',
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  previewTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  errorMessage: {
+    color: '#FF5252',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  previewDetails: {
+    gap: 8,
+  },
+  previewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  previewLabel: {
+    color: '#8a9ba8',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  previewValue: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  previewDivider: {
+    height: 1,
+    backgroundColor: 'rgba(138, 155, 168, 0.3)',
+    marginVertical: 8,
+  },
+  holidaysList: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(138, 155, 168, 0.2)',
+  },
+  holidaysListTitle: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  holidayItem: {
+    color: '#8a9ba8',
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 4,
+  },
   modalActions: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 8,
+    marginTop: 16,
+    paddingTop: 8,
   },
   cancelButton: {
     flex: 1,
@@ -830,6 +1120,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
+  },
+  disabledButton: {
+    backgroundColor: '#4a5568',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   submitButtonText: {
     color: '#ffffff',
