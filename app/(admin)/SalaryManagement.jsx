@@ -57,9 +57,7 @@ function AdminSalaryManagement() {
 
   // Sample data - replace with API calls
   useEffect(() => {
-     setLoading(true)
     fetchPaymentHistory();
-     setLoading(false)
   }, [selectedMonth, selectedYear]);
 
 
