@@ -3,6 +3,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
   Platform,
   ScrollView,
@@ -201,47 +202,111 @@ function Leave() {
   }, [startDate, endDate, rawHolidays]);
 
   const applyLeave = async () => {
-    if (!startDate || !endDate || !description.trim()) {
-      showToast('Please fill in all fields', "Warning");
-      return;
-    }
+  if (!startDate) {
+    showToast('Please select From Date', "Warning");
+    return;
+  }
 
-    // Frontend validation before API call
-    if (leavePreview?.error) {
-      showToast(leavePreview.message, "Error");
-      return;
-    }
+  if (!endDate) {
+    Alert.alert(
+      'Missing To Date',
+      'Do you want to apply for a single day leave?',
+      [
+        {
+          text: 'No',
+          onPress: () => {
+            showToast('Please select To Date', "Warning");
+          },
+          style: 'cancel',
+        },
+        {
+          text: 'Yes',
+          onPress: () => {
+            setEndDate(startDate); // Set end date same as start date
+            // Call the function again after state update
+            setTimeout(() => {
+              if (description.trim()) {
+                handleSingleDayLeave();
+              } else {
+                showToast('Please provide reason for leave', "Warning");
+              }
+            }, 100);
+          },
+        },
+      ]
+    );
+    return;
+  }
 
-    if (!leavePreview || leavePreview.totalLeaveDays <= 0) {
-      showToast('Invalid leave period', "Error");
-      return;
-    }
-    
-    try {
-      const response = await axios.post(`${url}/api/leaves/apply`, {
-        reason: description,
-        startDate: startDate,
-        endDate: endDate
-      }, {
-        headers: {
-          authorization: `Bearer ${await getToken()}`,
-        }
-      });
-      
-      if (response.data.message) {
-        setStartDate('');
-        setEndDate('');
-        setDescription('');
-        setLeavePreview(null);
-        setModalVisible(false);
-        showToast('Leave application submitted successfully', "Success");
-        fetchLeavesHistory();
+  if (!description.trim()) {
+    showToast('Please provide reason for leave', "Warning");
+    return;
+  }
+
+  // Frontend validation before API call
+  if (leavePreview?.error) {
+    showToast(leavePreview.message, "Error");
+    return;
+  }
+
+  if (!leavePreview || leavePreview.totalLeaveDays <= 0) {
+    showToast('Invalid leave period', "Error");
+    return;
+  }
+  
+  try {
+    const response = await axios.post(`${url}/api/leaves/apply`, {
+      reason: description,
+      startDate: startDate,
+      endDate: endDate
+    }, {
+      headers: {
+        authorization: `Bearer ${await getToken()}`,
       }
-    } catch (error) {
-      showToast(error.response?.data?.error || "Failed to apply leave", "Error");
-      console.error('Error Applying leave:', error);
+    });
+    
+    if (response.data.message) {
+      setStartDate('');
+      setEndDate('');
+      setDescription('');
+      setLeavePreview(null);
+      setModalVisible(false);
+      showToast('Leave application submitted successfully', "Success");
+      fetchLeavesHistory();
     }
-  };
+  } catch (error) {
+    showToast(error.response?.data?.error || "Failed to apply leave", "Error");
+    console.error('Error Applying leave:', error);
+  }
+};
+
+// Add this helper function for single day leave
+const handleSingleDayLeave = async () => {
+  try {
+    const response = await axios.post(`${url}/api/leaves/apply`, {
+      reason: description,
+      startDate: startDate,
+      endDate: startDate // Using startDate as endDate for single day
+    }, {
+      headers: {
+        authorization: `Bearer ${await getToken()}`,
+      }
+    });
+    
+    if (response.data.message) {
+      setStartDate('');
+      setEndDate('');
+      setDescription('');
+      setLeavePreview(null);
+      setModalVisible(false);
+      showToast('Leave application submitted successfully', "Success");
+      fetchLeavesHistory();
+    }
+  } catch (error) {
+    showToast(error.response?.data?.error || "Failed to apply leave", "Error");
+    console.error('Error Applying leave:', error);
+  }
+};
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -454,6 +519,11 @@ function Leave() {
         onRequestClose={() => resetModal()}
       >
         <View style={styles.modalBackground}>
+           <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ width: '100%' }}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
           <ScrollView contentContainerStyle={styles.modalScrollContainer} showsVerticalScrollIndicator={false}>
             <View style={styles.modalContainer}>
               <View style={styles.modalHeader}>
@@ -607,6 +677,27 @@ function Leave() {
                 />
               </View>
 
+          {/* Single Day Leave Note */}
+            <View
+              style={{
+                   backgroundColor: 'rgba(30, 144, 255, 0.1)',
+                 borderColor: 'rgba(30, 144, 255, 0.3)',
+                borderWidth: 1,
+                borderRadius: 8,
+                padding: 12,
+                marginTop: 12,
+              }}
+            >
+              <Text style={{ color: '#60A5FA', fontWeight: '600', marginBottom: 6,fontSize:18 }}>
+                 Note:
+              </Text>
+              <Text style={{ color: '#60A5FA', fontSize: 14, lineHeight: 20 }}>
+                If you are applying for a single day leave, please select the To-Date as the same Date as From-Date. It will be considered as a single day leave.
+              </Text>
+            </View>
+
+
+
               <View style={styles.modalActions}>
                 <TouchableOpacity 
                   style={styles.cancelButton} 
@@ -628,6 +719,7 @@ function Leave() {
               </View>
             </View>
           </ScrollView>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </SafeAreaView>
@@ -1132,4 +1224,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
   },
+  // noteContainer:{
+  //   backgroundColor: 'rgba(255, 165, 0, 0.1)',
+  //   borderLeftWidth: 4,
+  //   borderLeftColor: '#FFA500',
+  // },
+  // noteLabel:{
+  //   color: '#FFA500',
+  //   fontSize: 14,
+  //   fontWeight: '700',
+  //   marginBottom: 4,
+  //   letterSpacing: 0.3,
+  //   paddingLeft:8
+  // },
+  // noteText:{
+  //   color: '#ffd580',
+  //   fontSize: 13,
+  //   lineHeight: 18,
+  //   padding:8
+  // }
 });
