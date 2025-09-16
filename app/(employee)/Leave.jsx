@@ -23,7 +23,7 @@ function Leave() {
   const [modalVisible, setModalVisible] = useState(false);
   const [isLeave, setIsLeave] = useState(true);
   const [holidaysData, setHolidaysData] = useState([]);
-  const [rawHolidays, setRawHolidays] = useState([]); // Store raw holiday data for validation
+  const [rawHolidays, setRawHolidays] = useState([]);
   const [isLoadingHolidays, setIsLoadingHolidays] = useState(false);
   const [leaveHistory, setLeaveHistory] = useState([]);
   const [startDate, setStartDate] = useState('');
@@ -31,7 +31,7 @@ function Leave() {
   const [description, setDescription] = useState('');
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
-  const [leavePreview, setLeavePreview] = useState(null); // Show holiday preview
+  const [leavePreview, setLeavePreview] = useState(null);
   const currentYear = new Date().getFullYear();
   const {employeeData, showToast} = useContextData();
 
@@ -73,37 +73,19 @@ function Leave() {
 
   // Calculate leave preview when dates change
   const calculateLeavePreview = (startDateStr, endDateStr) => {
-    if (!startDateStr || !endDateStr) {
+    if (!startDateStr) {
       setLeavePreview(null);
       return;
     }
 
-    // Check if start or end date is a holiday
+    // If no end date, treat as single day leave
+    const effectiveEndDate = endDateStr || startDateStr;
+
+    // Check if start date is a holiday
     const startIsHoliday = isHoliday(startDateStr);
-    const endIsHoliday = isHoliday(endDateStr);
-
-    if (startIsHoliday || endIsHoliday) {
-      setLeavePreview({
-        error: true,
-        message: startIsHoliday 
-          ? "Start date is a holiday. Please select a different date."
-          : "End date is a holiday. Please select a different date.",
-        type: 'boundary_holiday'
-      });
-      return;
-    }
-
-    // Calculate total days
-    const start = new Date(startDateStr);
-    const end = new Date(endDateStr);
-    const totalCalendarDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-    // Get holidays in between
-    const holidaysInRange = getHolidaysBetweenDates(startDateStr, endDateStr);
-    const totalLeaveDays = totalCalendarDays - holidaysInRange.length;
-
-    // Special case: Single day leave on holiday
-    if (startDateStr === endDateStr && holidaysInRange.length > 0) {
+    
+    // For single day leave, check if it's a holiday
+    if (startDateStr === effectiveEndDate && startIsHoliday) {
       setLeavePreview({
         error: true,
         message: "Selected date is a holiday. No leave application needed.",
@@ -111,6 +93,30 @@ function Leave() {
       });
       return;
     }
+
+    // For multi-day leave, check if start or end date is a holiday
+    if (startDateStr !== effectiveEndDate) {
+      const endIsHoliday = isHoliday(effectiveEndDate);
+      if (startIsHoliday || endIsHoliday) {
+        setLeavePreview({
+          error: true,
+          message: startIsHoliday 
+            ? "Start date is a holiday. Please select a different date."
+            : "End date is a holiday. Please select a different date.",
+          type: 'boundary_holiday'
+        });
+        return;
+      }
+    }
+
+    // Calculate total days
+    const start = new Date(startDateStr);
+    const end = new Date(effectiveEndDate);
+    const totalCalendarDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    // Get holidays in between
+    const holidaysInRange = getHolidaysBetweenDates(startDateStr, effectiveEndDate);
+    const totalLeaveDays = totalCalendarDays - holidaysInRange.length;
 
     // All days are holidays
     if (totalLeaveDays <= 0) {
@@ -131,7 +137,8 @@ function Leave() {
       holidaysExcluded: holidaysInRange,
       leaveBalance: employeeData.leaveBalance,
       paidDays: Math.min(totalLeaveDays, employeeData.leaveBalance),
-      unpaidDays: Math.max(0, totalLeaveDays - employeeData.leaveBalance)
+      unpaidDays: Math.max(0, totalLeaveDays - employeeData.leaveBalance),
+      isSingleDay: startDateStr === effectiveEndDate
     });
   };
 
@@ -190,11 +197,12 @@ function Leave() {
   useEffect(() => {
     fetchHolidays();
     fetchLeavesHistory();
-  }, []);
+  },
+[]); 
 
   // Recalculate preview when dates change
   useEffect(() => {
-    if (startDate && endDate && rawHolidays.length > 0) {
+    if (startDate && rawHolidays.length > 0) {
       calculateLeavePreview(startDate, endDate);
     } else {
       setLeavePreview(null);
@@ -202,111 +210,56 @@ function Leave() {
   }, [startDate, endDate, rawHolidays]);
 
   const applyLeave = async () => {
-  if (!startDate) {
-    showToast('Please select From Date', "Warning");
-    return;
-  }
-
-  if (!endDate) {
-    Alert.alert(
-      'Missing To Date',
-      'Do you want to apply for a single day leave?',
-      [
-        {
-          text: 'No',
-          onPress: () => {
-            showToast('Please select To Date', "Warning");
-          },
-          style: 'cancel',
-        },
-        {
-          text: 'Yes',
-          onPress: () => {
-            setEndDate(startDate); // Set end date same as start date
-            // Call the function again after state update
-            setTimeout(() => {
-              if (description.trim()) {
-                handleSingleDayLeave();
-              } else {
-                showToast('Please provide reason for leave', "Warning");
-              }
-            }, 100);
-          },
-        },
-      ]
-    );
-    return;
-  }
-
-  if (!description.trim()) {
-    showToast('Please provide reason for leave', "Warning");
-    return;
-  }
-
-  // Frontend validation before API call
-  if (leavePreview?.error) {
-    showToast(leavePreview.message, "Error");
-    return;
-  }
-
-  if (!leavePreview || leavePreview.totalLeaveDays <= 0) {
-    showToast('Invalid leave period', "Error");
-    return;
-  }
-  
-  try {
-    const response = await axios.post(`${url}/api/leaves/apply`, {
-      reason: description,
-      startDate: startDate,
-      endDate: endDate
-    }, {
-      headers: {
-        authorization: `Bearer ${await getToken()}`,
-      }
-    });
-    
-    if (response.data.message) {
-      setStartDate('');
-      setEndDate('');
-      setDescription('');
-      setLeavePreview(null);
-      setModalVisible(false);
-      showToast('Leave application submitted successfully', "Success");
-      fetchLeavesHistory();
+    if (!startDate) {
+      showToast('Please select From Date', "Warning");
+      return;
     }
-  } catch (error) {
-    showToast(error.response?.data?.error || "Failed to apply leave", "Error");
-    console.error('Error Applying leave:', error);
-  }
-};
 
-// Add this helper function for single day leave
-const handleSingleDayLeave = async () => {
-  try {
-    const response = await axios.post(`${url}/api/leaves/apply`, {
-      reason: description,
-      startDate: startDate,
-      endDate: startDate // Using startDate as endDate for single day
-    }, {
-      headers: {
-        authorization: `Bearer ${await getToken()}`,
-      }
-    });
-    
-    if (response.data.message) {
-      setStartDate('');
-      setEndDate('');
-      setDescription('');
-      setLeavePreview(null);
-      setModalVisible(false);
-      showToast('Leave application submitted successfully', "Success");
-      fetchLeavesHistory();
+    if (!description.trim()) {
+      showToast('Please provide reason for leave', "Warning");
+      return;
     }
-  } catch (error) {
-    showToast(error.response?.data?.error || "Failed to apply leave", "Error");
-    console.error('Error Applying leave:', error);
-  }
-};
+
+    // Use startDate as endDate if endDate is not provided (single day leave)
+    const effectiveEndDate = endDate || startDate;
+
+    // Frontend validation before API call
+    if (leavePreview?.error) {
+      showToast(leavePreview.message, "Error");
+      return;
+    }
+
+    // For valid leave preview, check if totalLeaveDays > 0
+    if (leavePreview && leavePreview.totalLeaveDays <= 0) {
+      showToast('Invalid leave period', "Error");
+      return;
+    }
+    
+    try {
+      const response = await axios.post(`${url}/api/leaves/apply`, {
+        reason: description,
+        startDate: startDate,
+        endDate: effectiveEndDate
+      }, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`,
+        }
+      });
+      
+      if (response.data.message) {
+        setStartDate('');
+        setEndDate('');
+        setDescription('');
+        setLeavePreview(null);
+        setModalVisible(false);
+        showToast('Leave application submitted successfully', "Success");
+        fetchLeavesHistory();
+      }
+    } catch (error) {
+      showToast(error.response?.data?.error || "Failed to apply leave", "Error");
+      console.error('Error Applying leave:', error);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -336,6 +289,11 @@ const handleSingleDayLeave = async () => {
     setDescription('');
     setLeavePreview(null);
     setModalVisible(false);
+  };
+
+  // Check if form is valid for submission
+  const isFormValid = () => {
+    return startDate && description.trim() && (!leavePreview || !leavePreview.error);
   };
 
   return (
@@ -436,7 +394,7 @@ const handleSingleDayLeave = async () => {
                       />
                       <View>
                         {item.fromDate === item.toDate ? (
-                          <Text style={styles.leaveDateText}>{item?.fromDate}</Text>
+                          <Text style={styles.leaveDateText}>{formatDay(item?.fromDate)}</Text>
                         ) : (
                           <Text style={styles.leaveDateText}>
                             {formatDay(item.fromDate)} - {formatDay(item.toDate)}
@@ -536,7 +494,7 @@ const handleSingleDayLeave = async () => {
                 </TouchableOpacity>
               </View>
               
-              {/* Start Date Picker */}
+             {/* Start Date Picker */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>From Date</Text>
                 <TouchableOpacity
@@ -560,7 +518,9 @@ const handleSingleDayLeave = async () => {
                   display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                   onChange={(event, selectedDate) => {
                     setShowStartPicker(false);
-                    if (selectedDate) setStartDate(selectedDate.toISOString().slice(0, 10));
+                    if (event.type === 'set' && selectedDate) {
+                      setStartDate(selectedDate.toISOString().slice(0, 10));
+                    }
                   }}
                   minimumDate={new Date()}
                   maximumDate={endDate ? new Date(endDate) : undefined}
@@ -569,7 +529,7 @@ const handleSingleDayLeave = async () => {
 
               {/* End Date Picker */}
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>To Date</Text>
+                <Text style={styles.inputLabel}>To Date (Optional for single day)</Text>
                 <TouchableOpacity
                   style={[
                     styles.dateInput,
@@ -579,7 +539,7 @@ const handleSingleDayLeave = async () => {
                 >
                   <MaterialCommunityIcons name="calendar-outline" size={20} color="#8a9ba8" />
                   <Text style={[styles.dateText, { color: endDate ? '#fff' : '#8a9ba8' }]}>
-                    {endDate || 'Select end date'}
+                    {endDate || 'Select end date (optional)'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -591,12 +551,13 @@ const handleSingleDayLeave = async () => {
                   display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                   onChange={(event, selectedDate) => {
                     setShowEndPicker(false);
-                    if (selectedDate) setEndDate(selectedDate.toISOString().slice(0, 10));
+                    if (event.type === 'set' && selectedDate) {
+                      setEndDate(selectedDate.toISOString().slice(0, 10));
+                    }
                   }}
                   minimumDate={startDate ? new Date(startDate) : new Date()}
                 />
               )}
-
               {/* Leave Preview */}
               {leavePreview && (
                 <View style={[
@@ -613,7 +574,7 @@ const handleSingleDayLeave = async () => {
                       styles.previewTitle,
                       { color: leavePreview.error ? "#FF5252" : "#1e90ff" }
                     ]}>
-                      {leavePreview.error ? "Invalid Leave Period" : "Leave Summary"}
+                      {leavePreview.error ? "Invalid Leave Period" : `Leave Summary ${leavePreview.isSingleDay ? '(Single Day)' : ''}`}
                     </Text>
                   </View>
                   
@@ -637,7 +598,7 @@ const handleSingleDayLeave = async () => {
                       )}
                       <View style={styles.previewDivider} />
                       <View style={styles.previewRow}>
-                        <Text style={styles.previewLabel}>Total Leave Days:</Text>
+                        <Text style={styles.previewLabel}>Paid Leave Days:</Text>
                         <Text style={[styles.previewValue, { color: '#00E676' }]}>{leavePreview.paidDays}</Text>
                       </View>
                       {leavePreview.unpaidDays > 0 && (
@@ -677,26 +638,13 @@ const handleSingleDayLeave = async () => {
                 />
               </View>
 
-          {/* Single Day Leave Note */}
-            <View
-              style={{
-                   backgroundColor: 'rgba(30, 144, 255, 0.1)',
-                 borderColor: 'rgba(30, 144, 255, 0.3)',
-                borderWidth: 1,
-                borderRadius: 8,
-                padding: 12,
-                marginTop: 12,
-              }}
-            >
-              <Text style={{ color: '#60A5FA', fontWeight: '600', marginBottom: 6,fontSize:18 }}>
-                 Note:
-              </Text>
-              <Text style={{ color: '#60A5FA', fontSize: 14, lineHeight: 20 }}>
-                If you are applying for a single day leave, please select the To-Date as the same Date as From-Date. It will be considered as a single day leave.
-              </Text>
-            </View>
-
-
+              {/* Single Day Leave Note */}
+              {/* <View style={styles.noteContainer}>
+                <Text style={styles.noteLabel}>Note:</Text>
+                <Text style={styles.noteText}>
+                  Leave the "To Date" empty for single day leave application. The system will automatically treat it as a single day leave using the "From Date".
+                </Text>
+              </View> */}
 
               <View style={styles.modalActions}>
                 <TouchableOpacity 
@@ -708,10 +656,10 @@ const handleSingleDayLeave = async () => {
                 <TouchableOpacity 
                   style={[
                     styles.submitButton,
-                    (leavePreview?.error || !leavePreview) && styles.disabledButton
+                    !isFormValid() && styles.disabledButton
                   ]} 
                   onPress={applyLeave}
-                  disabled={leavePreview?.error || !leavePreview}
+                  disabled={!isFormValid()}
                 >
                   <MaterialCommunityIcons name="send-outline" size={18} color="#fff" />
                   <Text style={styles.submitButtonText}>Submit</Text>
@@ -1179,6 +1127,25 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 4,
   },
+  noteContainer: {
+    backgroundColor: 'rgba(30, 144, 255, 0.1)',
+    borderColor: 'rgba(30, 144, 255, 0.3)',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+  },
+  noteLabel: {
+    color: '#60A5FA',
+    fontWeight: '600',
+    marginBottom: 6,
+    fontSize: 14,
+  },
+  noteText: {
+    color: '#60A5FA',
+    fontSize: 13,
+    lineHeight: 18,
+  },
   modalActions: {
     flexDirection: 'row',
     gap: 12,
@@ -1224,23 +1191,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
   },
-  // noteContainer:{
-  //   backgroundColor: 'rgba(255, 165, 0, 0.1)',
-  //   borderLeftWidth: 4,
-  //   borderLeftColor: '#FFA500',
-  // },
-  // noteLabel:{
-  //   color: '#FFA500',
-  //   fontSize: 14,
-  //   fontWeight: '700',
-  //   marginBottom: 4,
-  //   letterSpacing: 0.3,
-  //   paddingLeft:8
-  // },
-  // noteText:{
-  //   color: '#ffd580',
-  //   fontSize: 13,
-  //   lineHeight: 18,
-  //   padding:8
-  // }
 });
