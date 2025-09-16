@@ -5,7 +5,7 @@ import axios from 'axios';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { url } from '../../../constants/EnvValue';
 import { useContextData } from "../../../context/EmployeeContext";
@@ -179,6 +179,17 @@ const updateOfficeSettings = async () => {
 
   return (
     <SafeAreaView style={styles.container}>
+     <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+        >
+    
       <Text style={styles.header}>Office Settings</Text>
 
       {/* general settings   */}
@@ -357,7 +368,11 @@ const updateOfficeSettings = async () => {
           Break in minutes: {formData.breakTime} mins
         </Text>
       </View>
-    </SafeAreaView>
+      </ScrollView>
+     </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
+  
+     </SafeAreaView>
   )
 }
 
