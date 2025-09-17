@@ -166,19 +166,21 @@ function Payment() {
                   const monthTotals = calculateMonthTotals(monthData.transactions);
                   const monthTotal = monthData.baseSalary + monthTotals.overtime - monthTotals.deduction - monthTotals.advance;
                   const status = getPaymentStatus(monthData.transactions, monthData.baseSalary);
-                  const itemId = `Rs {monthData.month}-Rs {selectedYear}-Rs {index}`;
-                  const isOpen = expanded === itemId;
+                  const itemId = `${monthData.month}- ${selectedYear}- ${index}`;
+                  const isOpen = expanded === index;
 
                   return (
-                    <View style={styles.historyCard} key={itemId}>
+                    <View style={styles.historyCard} key={index}>
                       <TouchableOpacity 
                         style={styles.historyCardHeader}
-                        onPress={() => setExpanded(isOpen ? null : itemId)}
+                        onPress={() => setExpanded(isOpen ? null : index)}
                       >
                         <Text style={styles.historyCardTitle}>{monthData.month} {selectedYear}</Text>
-                        <Text style={[styles.status, {color: status === "Paid" ? "#4dff91" : "#ffcc00"}]}>
+
+                        {/* hide status for now */}
+                        {/* <Text style={[styles.status, {color: status === "Paid" ? "#4dff91" : "#ffcc00"}]}>
                           {status}
-                        </Text>
+                        </Text> */}
                         <Text style={styles.historyCardAmount}>Rs{monthTotal}</Text>
                         <MaterialCommunityIcons 
                           name={isOpen ? "chevron-up" : "chevron-down"} 

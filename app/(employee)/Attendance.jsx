@@ -135,7 +135,7 @@ const {showToast} = useContextData()
               </View>
               <View style={styles.row}>
                 <Text style={styles.label}>Total Overtime Hours</Text>
-                <Text style={styles.value}>{calculateTotalOvertime(attendanceData?.attendanceRecords)}hr</Text>
+                <Text style={styles.value}>{calculateTotalOvertime(attendanceData?.attendanceRecords).toFixed(2)}hr</Text>
               </View>
             </View>
           </View>

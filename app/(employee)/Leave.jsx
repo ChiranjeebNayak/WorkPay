@@ -405,11 +405,14 @@ function Leave() {
                         </Text>
                       </View>
                     </View>
-                    <View style={styles.leaveCardRight}>
+
+                    {/* leave type */}
+                    
+                    {/* <View style={styles.leaveCardRight}>
                       <View style={[styles.leaveTypeBadge, { backgroundColor: getTypeColor(item.type) }]}>
                         <Text style={styles.leaveTypeText}>{item.type}</Text>
                       </View>
-                    </View>
+                    </View> */}
                   </View>
                   
                   <Text style={styles.leaveDescription}>{item.reason}</Text>
