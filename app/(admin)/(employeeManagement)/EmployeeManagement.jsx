@@ -6,7 +6,6 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   FlatList,
   Modal,
   ScrollView,
@@ -29,6 +28,8 @@ function EmployeeManagement() {
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState(null);
   const [isAdding, setIsAdding] = useState(true);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const {showToast} = useContextData();
@@ -138,31 +139,35 @@ function EmployeeManagement() {
     }
   }
 
-  const deleteEmployee = async (employee) => {
-    Alert.alert(
-      'Confirm Delete',
-      `Are you sure you want to delete ${employee.name}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: async () => {
-            try {
-              const response = await axios.delete(`${url}/api/employees/delete/${employee.id}`, {
-                headers: {
-                  authorization: `Bearer ${await getToken()}`
-                }
-              });
-              console.log('Employee deleted:', response.data.message);
-              showToast(response.data.message,"Success")
-              fetchEmployees();
-            } catch (error) {
-               showToast(error.response.data.error,"Error")
-              console.error('Error deleting employee:', error);
-            }
-          }
+  const showDeleteConfirmation = (employee) => {
+    setEmployeeToDelete(employee);
+    setDeleteModalVisible(true);
+  };
+
+  const confirmDeleteEmployee = async () => {
+    if (!employeeToDelete) return;
+    
+    try {
+      const response = await axios.delete(`${url}/api/employees/delete/${employeeToDelete.id}`, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
         }
-      ]
-    );
-  }
+      });
+      console.log('Employee deleted:', response.data.message);
+      showToast(response.data.message,"Success")
+      setDeleteModalVisible(false);
+      setEmployeeToDelete(null);
+      fetchEmployees();
+    } catch (error) {
+       showToast(error.response.data.error,"Error")
+      console.error('Error deleting employee:', error);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModalVisible(false);
+    setEmployeeToDelete(null);
+  };
 
   const handleEmployeeAddandEdit = (type) => {
     if (type === 'add') {
@@ -315,7 +320,7 @@ function EmployeeManagement() {
         
         <TouchableOpacity 
           style={[styles.actionButton, styles.deleteButton]} 
-          onPress={() => deleteEmployee(item)}
+          onPress={() => showDeleteConfirmation(item)}
         >
           <Feather name="trash-2" size={16} color="#D0021B" />
           <Text style={[styles.actionText, { color: '#D0021B' }]}>Delete</Text>
@@ -476,6 +481,48 @@ function EmployeeManagement() {
                 </TouchableOpacity>
               </View>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Custom Delete Confirmation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={deleteModalVisible}
+        onRequestClose={cancelDelete}
+      >
+        <View style={styles.deleteModalOverlay}>
+          <View style={styles.deleteModalContent}>
+            <View style={styles.deleteIconContainer}>
+              <View style={styles.deleteIcon}>
+                <Feather name="trash-2" size={32} color="#D0021B" />
+              </View>
+            </View>
+            
+            <Text style={styles.deleteTitle}>Delete Employee</Text>
+            <Text style={styles.deleteMessage}>
+              Are you sure you want to delete{' '}
+              <Text style={styles.employeeNameHighlight}>
+                {employeeToDelete?.name}
+              </Text>
+              ? This action cannot be undone.
+            </Text>
+
+            <View style={styles.deleteModalActions}>
+              <TouchableOpacity 
+                style={styles.deleteCancelButton} 
+                onPress={cancelDelete}
+              >
+                <Text style={styles.deleteCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.deleteConfirmButton} 
+                onPress={confirmDeleteEmployee}
+              >
+                <Text style={styles.deleteConfirmButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -762,5 +809,89 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: '#8A9BAE',
+  },
+
+  // Custom Delete Modal Styles
+  deleteModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  deleteModalContent: {
+    backgroundColor: '#192633',
+    borderRadius: 16,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  deleteIconContainer: {
+    marginBottom: 20,
+  },
+  deleteIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#D0021B15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#D0021B30',
+  },
+  deleteTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  deleteMessage: {
+    fontSize: 16,
+    color: '#8A9BAE',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  employeeNameHighlight: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  deleteModalActions: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 12,
+  },
+  deleteCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2A3441',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  deleteCancelButtonText: {
+    color: '#8A9BAE',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteConfirmButton: {
+    flex: 1,
+    backgroundColor: '#D0021B',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#D0021B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  deleteConfirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

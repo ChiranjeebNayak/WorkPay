@@ -5,7 +5,6 @@ import axios from "axios";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Modal,
   Platform,
   ScrollView,
@@ -24,12 +23,14 @@ function HolidayManagement() {
   const currentYear = new Date().getFullYear();
   const [holidays, setHolidays] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [holidayToDelete, setHolidayToDelete] = useState(null);
   const [holidayDate, setHolidayDate] = useState(null);
   const [holidayName, setHolidayName] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-    const {showToast} = useContextData()
+  const {showToast} = useContextData()
 
   const fetchHolidays = async () => {
     try {
@@ -92,38 +93,39 @@ function HolidayManagement() {
     }
   };
 
-  const deleteHoliday = async (holidayId, holidayName) => {
-    Alert.alert(
-      'Delete Holiday',
-      `Are you sure you want to delete "${holidayName}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setIsLoading(true);
-              await axios.delete(`${url}/api/holidays/delete/${holidayId}`, {
-                headers: {
-                  authorization: `Bearer ${await getToken()}`
-                }
-              });
+  const showDeleteConfirmation = (holidayId, holidayName) => {
+    setHolidayToDelete({ id: holidayId, name: holidayName });
+    setDeleteModalVisible(true);
+  };
 
-              showToast( 'Holiday deleted successfully!','Success');
-              
-              // Refresh the holidays list
-              await fetchHolidays();
-            } catch (error) {
-              console.error('Error deleting holiday:', error);
-              showToast('Failed to delete holiday','Error');
-            } finally {
-              setIsLoading(false);
-            }
-          }
+  const confirmDeleteHoliday = async () => {
+    if (!holidayToDelete) return;
+
+    try {
+      setIsLoading(true);
+      await axios.delete(`${url}/api/holidays/delete/${holidayToDelete.id}`, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
         }
-      ]
-    );
+      });
+
+      showToast('Holiday deleted successfully!','Success');
+      setDeleteModalVisible(false);
+      setHolidayToDelete(null);
+      
+      // Refresh the holidays list
+      await fetchHolidays();
+    } catch (error) {
+      console.error('Error deleting holiday:', error);
+      showToast('Failed to delete holiday','Error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModalVisible(false);
+    setHolidayToDelete(null);
   };
 
   useEffect(() => {
@@ -200,7 +202,7 @@ function HolidayManagement() {
                         </View>
                         <TouchableOpacity
                           style={styles.deleteButton}
-                          onPress={() => deleteHoliday(holiday.id, holiday.name)}
+                          onPress={() => showDeleteConfirmation(holiday.id, holiday.name)}
                           disabled={isLoading}
                         >
                           <Feather name="trash-2" size={16} color="#ff4d6d" />
@@ -284,6 +286,52 @@ function HolidayManagement() {
             >
               <Text style={styles.modalButtonText}>Cancel</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Custom Delete Confirmation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={deleteModalVisible}
+        onRequestClose={cancelDelete}
+      >
+        <View style={styles.deleteModalOverlay}>
+          <View style={styles.deleteModalContent}>
+            <View style={styles.deleteIconContainer}>
+              <View style={styles.deleteIcon}>
+                <MaterialCommunityIcons name="calendar-remove" size={32} color="#ff4d6d" />
+              </View>
+            </View>
+            
+            <Text style={styles.deleteTitle}>Delete Holiday</Text>
+            <Text style={styles.deleteMessage}>
+              Are you sure you want to delete{' '}
+              <Text style={styles.holidayNameHighlight}>
+                "{holidayToDelete?.name}"
+              </Text>
+              ? This action cannot be undone.
+            </Text>
+
+            <View style={styles.deleteModalActions}>
+              <TouchableOpacity 
+                style={styles.deleteCancelButton} 
+                onPress={cancelDelete}
+                disabled={isLoading}
+              >
+                <Text style={styles.deleteCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.deleteConfirmButton, { opacity: isLoading ? 0.6 : 1 }]} 
+                onPress={confirmDeleteHoliday}
+                disabled={isLoading}
+              >
+                <Text style={styles.deleteConfirmButtonText}>
+                  {isLoading ? 'Deleting...' : 'Delete'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -428,5 +476,89 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+
+  // Custom Delete Modal Styles
+  deleteModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  deleteModalContent: {
+    backgroundColor: '#1e262f',
+    borderRadius: 16,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  deleteIconContainer: {
+    marginBottom: 20,
+  },
+  deleteIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 77, 109, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 77, 109, 0.3)',
+  },
+  deleteTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  deleteMessage: {
+    fontSize: 16,
+    color: '#8A9BAE',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  holidayNameHighlight: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  deleteModalActions: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 12,
+  },
+  deleteCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2A3441',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  deleteCancelButtonText: {
+    color: '#8A9BAE',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteConfirmButton: {
+    flex: 1,
+    backgroundColor: '#ff4d6d',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#ff4d6d',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  deleteConfirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

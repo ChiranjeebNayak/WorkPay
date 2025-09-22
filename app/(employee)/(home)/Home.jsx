@@ -4,7 +4,7 @@ import axios from 'axios'
 import * as Location from 'expo-location'
 import { useRouter } from "expo-router"
 import { useEffect, useState } from "react"
-import { Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { url } from '../../../constants/EnvValue'
 import { useContextData } from "../../../context/EmployeeContext"
@@ -31,7 +31,6 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 function Home() {
   const [dateTime, setDateTime] = useState(new Date());
   const [showMenu, setShowMenu] = useState(false);
-  const [locationPermission, setLocationPermission] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const router = useRouter();
@@ -45,112 +44,37 @@ function Home() {
     return () => clearInterval(timer)
   }, [])
 
-  // Request location permissions
-  const requestLocationPermission = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setLocationPermission(status === 'granted');
-      
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permission Denied',
-          'Location permission is required for check-in functionality.',
-          [{ text: 'OK' }]
-        );
-        return false;
-      }
-      return true;
-    } catch (error) {
-      console.error('Error requesting location permission:', error);
-      showToast('Error requesting location permission', 'Error');
-      return false;
-    }
-  };
-
-  // Get current user location
+  // Get current user location similar to OfficeSettings
   const getCurrentLocation = async () => {
     try {
       setLocationLoading(true);
       
-      // Check if location services are enabled
-      const isLocationEnabled = await Location.hasServicesEnabledAsync();
-      if (!isLocationEnabled) {
-        Alert.alert(
-          'Location Services Disabled',
-          'Please enable location services to use check-in functionality.',
-          [{ text: 'OK' }]
-        );
+      // Request location permissions first
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        showToast('Permission to access location was denied', 'Warning');
+        setLocationPermission(false);
         return null;
       }
 
-      // Get current position with high accuracy
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-        timeout: 15000,
-        maximumAge: 10000,
-      });
-
-      setCurrentLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        accuracy: location.coords.accuracy
-      });
-
-      return {
+      // Get current position
+      let location = await Location.getCurrentPositionAsync({});
+      
+      const userLocation = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
         accuracy: location.coords.accuracy
       };
+
+      setCurrentLocation(userLocation);
+      
+      return userLocation;
     } catch (error) {
       console.error('Error getting location:', error);
-      showToast('Unable to get current location. Please try again.', 'Error');
+      showToast('Failed to get current location','Error');
       return null;
     } finally {
       setLocationLoading(false);
-    }
-  };
-
-  // Verify if user is within office location range
-  const verifyLocationForCheckIn = async (officeLocation) => {
-    try {
-      // Request permission if not already granted
-      if (locationPermission !== true) {
-        const permissionGranted = await requestLocationPermission();
-        if (!permissionGranted) return false;
-      }
-
-      // Get current location
-      const userLocation = await getCurrentLocation();
-      if (!userLocation) return false;
-
-      // Calculate distance between user and office
-      const distance = calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        officeLocation.latitude,
-        officeLocation.longitude
-      );
-
-      console.log(`Distance from office: ${distance.toFixed(2)} meters`);
-
-      // Check if user is within 100-200 meters (you can adjust this range)
-      const MAX_DISTANCE = 200; // meters
-      const MIN_DISTANCE = 0;   // meters
-
-      if (distance >= MIN_DISTANCE && distance <= MAX_DISTANCE) {
-        return true;
-      } else {
-        Alert.alert(
-          'Location Verification Failed',
-          `You must be within ${MAX_DISTANCE} meters of the office to check in. Current distance: ${Math.round(distance)} meters.`,
-          [{ text: 'OK' }]
-        );
-        return false;
-      }
-    } catch (error) {
-      console.error('Error verifying location:', error);
-      showToast('Location verification failed. Please try again.', 'Error');
-      return false;
     }
   };
 
@@ -173,34 +97,53 @@ function Home() {
 
   useEffect(() => {
     fetchDashboardDetails();
-    // Request location permission on component mount
-    requestLocationPermission();
   }, []);
 
   const handleAttendanceAction = async (action) => {
+    if(locationLoading){
+      showToast('Location is being fetched. Please wait...','Warning');
+      return;
+    }
+
     try {
       // Get office location from dashboard details
       const officeLocation = dashboardDetails?.officeDetails;
       
       if (!officeLocation || !officeLocation.latitude || !officeLocation.longitude) {
-        showToast('Office location not available. Please contact administrator.', 'Error');
+        showToast('Office location information is not available. Please contact your administrator.', 'Error');
         return;
       }
 
-      // Verify location before allowing check-in/check-out
-      const isLocationValid = await verifyLocationForCheckIn({
-        latitude: dashboardDetails?.officeDetails?.latitude,
-        longitude: dashboardDetails?.officeDetails?.longitude
-      });
+      // Get current location
+      const userLocation = await getCurrentLocation();
+      if (!userLocation) {
+        showToast('Unable to get current location. Please ensure location permissions are granted.', 'Error');
+        return;
+      }
 
-      if (!isLocationValid) {
-        return; // Location verification failed
+      // Calculate distance between user and office
+      const distance = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        officeLocation.latitude,
+        officeLocation.longitude
+      );
+
+      console.log(`Distance from office: ${distance.toFixed(2)} meters`);
+
+      // Check if user is within allowed range
+      const MAX_DISTANCE = 200; // meters
+      const MIN_DISTANCE = 0;   // meters
+
+      if (distance < MIN_DISTANCE || distance > MAX_DISTANCE) {
+        showToast(`You must be within ${MAX_DISTANCE} meters of the office to check in. Current distance: ${Math.round(distance)} meters`, 'Warning');
+        return;
       }
 
       // Proceed with attendance action if location is verified
       const response = await axios.post(`${url}/api/attendances/mark`, {
         type: action,
-        location: currentLocation // Send current location to backend
+        location: userLocation // Send current location to backend
       },{
         headers: {
           authorization: `Bearer ${await getToken()}`
@@ -287,24 +230,6 @@ function Home() {
         contentContainerStyle={styles.scrollContent}
         onScrollBeginDrag={() => setShowMenu(false)}
       >
-        {/* Location Status Indicator */}
-        <View style={styles.locationStatusContainer}>
-          <View style={styles.locationStatus}>
-            <MaterialCommunityIcons 
-              name={locationPermission ? "map-marker-check" : "map-marker-off"} 
-              size={16} 
-              color={locationPermission ? "#10B981" : "#F59E0B"} 
-            />
-            <Text style={[styles.locationStatusText, { color: locationPermission ? "#10B981" : "#F59E0B" }]}>
-              {locationPermission ? "Location Access Granted" : "Location Access Required"}
-            </Text>
-          </View>
-          {currentLocation && (
-            <Text style={styles.accuracyText}>
-              Accuracy: ±{Math.round(currentLocation.accuracy)}m
-            </Text>
-          )}
-        </View>
 
         {/* Time + Check In */}
         <View style={styles.checkInOutContainer}>
@@ -507,30 +432,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     alignItems: "center",
     paddingHorizontal: 20,
-  },
-  locationStatusContainer: {
-    width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  locationStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  locationStatusText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  accuracyText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    fontWeight: '500',
   },
   checkInOutContainer: {
     width: '100%',
