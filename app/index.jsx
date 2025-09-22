@@ -141,8 +141,8 @@ function index() {
         <View style={styles.logoContainer}>
           <MaterialCommunityIcons name="briefcase-variant" size={40} color="#4da6ff" />
         </View>
-        <Text style={styles.title}>Work Pay</Text>
-        <Text style={styles.subtitle}>Manage your salary with ease</Text>
+        <Text style={styles.title}>SANGHARSH GROUP</Text>
+        {/* <Text style={styles.subtitle}>Manage your salary with ease</Text> */}
       </View>
 
       {/* Main Card */}
