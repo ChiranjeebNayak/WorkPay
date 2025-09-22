@@ -32,6 +32,7 @@ function EmployeeManagement() {
   const [isAdding, setIsAdding] = useState(true);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const {showToast} = useContextData();
+  const [officeData,setOfficeData] = useState({});
   
   // Date picker states
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -45,8 +46,25 @@ function EmployeeManagement() {
     baseSalary: '',
     overtimeRate: '',
     joinedDate: '',
-    officeId: 1,
+    officeId: officeData?.id,
   });
+
+    const fetchOfficeDetails = async () => {
+    try {
+      const response = await axios.get(`${url}/api/offices/`, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+
+      // Populate form data with fetched data
+      const data = response.data;
+      setOfficeData(data);
+    } catch (error) {
+      showToast(error.response.data.error,"Error")
+      console.error('Error fetching office details:', error);
+    }
+  }
 
   const fetchEmployees = async () => {
     try {
@@ -171,6 +189,7 @@ function EmployeeManagement() {
   // Sample data - replace with API call
   useEffect(() => {
     fetchEmployees();
+    fetchOfficeDetails();
   }, []);
 
   // Search functionality
@@ -194,7 +213,7 @@ function EmployeeManagement() {
       baseSalary: '',
       overtimeRate: '',
       joinedDate: '',
-      officeId: 1,
+      officeId: officeData?.id ,
     });
     setEditingEmployee(null);
     setSelectedDate(new Date());

@@ -1,22 +1,42 @@
 import Feather from '@expo/vector-icons/Feather'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import axios from 'axios'
+import * as Location from 'expo-location'
 import { useRouter } from "expo-router"
 import { useEffect, useState } from "react"
-import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { url } from '../../../constants/EnvValue'
 import { useContextData } from "../../../context/EmployeeContext"
 import { getToken, removeToken } from '../../../services/ApiService'
 import { calculateHoursManual, formatMinutesToHHMM } from "../../../utils/TimeUtils"
 
+// Haversine formula to calculate distance between two coordinates
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = lat1 * Math.PI/180;
+  const φ2 = lat2 * Math.PI/180;
+  const Δφ = (lat2-lat1) * Math.PI/180;
+  const Δλ = (lon2-lon1) * Math.PI/180;
+
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+          Math.cos(φ1) * Math.cos(φ2) *
+          Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  const distance = R * c; // Distance in meters
+  return distance;
+}
 
 function Home() {
   const [dateTime, setDateTime] = useState(new Date());
   const [showMenu, setShowMenu] = useState(false);
+  const [locationPermission, setLocationPermission] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
   const router = useRouter();
   const [dashboardDetails, setDashboardDetails] = useState(null);
-  const {setEmployeeData ,showToast} = useContextData();
+  const {setEmployeeData, showToast} = useContextData();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -24,6 +44,115 @@ function Home() {
     }, 1000)
     return () => clearInterval(timer)
   }, [])
+
+  // Request location permissions
+  const requestLocationPermission = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      setLocationPermission(status === 'granted');
+      
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Denied',
+          'Location permission is required for check-in functionality.',
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Error requesting location permission:', error);
+      showToast('Error requesting location permission', 'Error');
+      return false;
+    }
+  };
+
+  // Get current user location
+  const getCurrentLocation = async () => {
+    try {
+      setLocationLoading(true);
+      
+      // Check if location services are enabled
+      const isLocationEnabled = await Location.hasServicesEnabledAsync();
+      if (!isLocationEnabled) {
+        Alert.alert(
+          'Location Services Disabled',
+          'Please enable location services to use check-in functionality.',
+          [{ text: 'OK' }]
+        );
+        return null;
+      }
+
+      // Get current position with high accuracy
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+        timeout: 15000,
+        maximumAge: 10000,
+      });
+
+      setCurrentLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        accuracy: location.coords.accuracy
+      });
+
+      return {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        accuracy: location.coords.accuracy
+      };
+    } catch (error) {
+      console.error('Error getting location:', error);
+      showToast('Unable to get current location. Please try again.', 'Error');
+      return null;
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  // Verify if user is within office location range
+  const verifyLocationForCheckIn = async (officeLocation) => {
+    try {
+      // Request permission if not already granted
+      if (locationPermission !== true) {
+        const permissionGranted = await requestLocationPermission();
+        if (!permissionGranted) return false;
+      }
+
+      // Get current location
+      const userLocation = await getCurrentLocation();
+      if (!userLocation) return false;
+
+      // Calculate distance between user and office
+      const distance = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        officeLocation.latitude,
+        officeLocation.longitude
+      );
+
+      console.log(`Distance from office: ${distance.toFixed(2)} meters`);
+
+      // Check if user is within 100-200 meters (you can adjust this range)
+      const MAX_DISTANCE = 200; // meters
+      const MIN_DISTANCE = 0;   // meters
+
+      if (distance >= MIN_DISTANCE && distance <= MAX_DISTANCE) {
+        return true;
+      } else {
+        Alert.alert(
+          'Location Verification Failed',
+          `You must be within ${MAX_DISTANCE} meters of the office to check in. Current distance: ${Math.round(distance)} meters.`,
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+    } catch (error) {
+      console.error('Error verifying location:', error);
+      showToast('Location verification failed. Please try again.', 'Error');
+      return false;
+    }
+  };
 
   const fetchDashboardDetails = async () => {
     try {
@@ -34,7 +163,8 @@ function Home() {
       });
       const data = response.data;
       setDashboardDetails(data);
-      setEmployeeData(data.employeeDetails)
+      setEmployeeData(data.employeeDetails);
+      console.log('Fetched dashboard details:', data);
     } catch (error) {
       showToast(error.response.data.error,'Error');
       console.error('Error fetching dashboard details:', error);
@@ -43,31 +173,53 @@ function Home() {
 
   useEffect(() => {
     fetchDashboardDetails();
+    // Request location permission on component mount
+    requestLocationPermission();
   }, []);
 
   const handleAttendanceAction = async (action) => {
     try {
+      // Get office location from dashboard details
+      const officeLocation = dashboardDetails?.officeDetails;
+      
+      if (!officeLocation || !officeLocation.latitude || !officeLocation.longitude) {
+        showToast('Office location not available. Please contact administrator.', 'Error');
+        return;
+      }
+
+      // Verify location before allowing check-in/check-out
+      const isLocationValid = await verifyLocationForCheckIn({
+        latitude: dashboardDetails?.officeDetails?.latitude,
+        longitude: dashboardDetails?.officeDetails?.longitude
+      });
+
+      if (!isLocationValid) {
+        return; // Location verification failed
+      }
+
+      // Proceed with attendance action if location is verified
       const response = await axios.post(`${url}/api/attendances/mark`, {
-        type: action
+        type: action,
+        location: currentLocation // Send current location to backend
       },{
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
       });
+      
       const data = response.data;
       if(data){
         showToast(data.message,"Success");
         await fetchDashboardDetails();
       }
     } catch (error) {
-      if(error.response.data.message){
-showToast(error.response.data.message,"Warning")
+      if(error.response?.data?.message){
+        showToast(error.response.data.message,"Warning")
       }
-      if(error.response.data.error){
+      if(error.response?.data?.error){
         showToast(error.response.data.error,"Error")
       }
-      
-      console.error('Error fetching dashboard details:', error);
+      console.error('Error marking attendance:', error);
     }
   }
 
@@ -105,8 +257,7 @@ showToast(error.response.data.message,"Warning")
                 style={styles.menuItem}
                 onPress={() => {
                   setShowMenu(false);
-                  // Navigate to profile page
-                   router.push({
+                  router.push({
                     pathname: "/(employee)/(home)/EmployeeProfile",
                   });
                 }}
@@ -119,7 +270,6 @@ showToast(error.response.data.message,"Warning")
               
               <TouchableOpacity 
                 style={styles.menuItem}
-
                 onPress={() => {
                   setShowMenu(false);
                   handleLogout();
@@ -137,6 +287,24 @@ showToast(error.response.data.message,"Warning")
         contentContainerStyle={styles.scrollContent}
         onScrollBeginDrag={() => setShowMenu(false)}
       >
+        {/* Location Status Indicator */}
+        <View style={styles.locationStatusContainer}>
+          <View style={styles.locationStatus}>
+            <MaterialCommunityIcons 
+              name={locationPermission ? "map-marker-check" : "map-marker-off"} 
+              size={16} 
+              color={locationPermission ? "#10B981" : "#F59E0B"} 
+            />
+            <Text style={[styles.locationStatusText, { color: locationPermission ? "#10B981" : "#F59E0B" }]}>
+              {locationPermission ? "Location Access Granted" : "Location Access Required"}
+            </Text>
+          </View>
+          {currentLocation && (
+            <Text style={styles.accuracyText}>
+              Accuracy: ±{Math.round(currentLocation.accuracy)}m
+            </Text>
+          )}
+        </View>
 
         {/* Time + Check In */}
         <View style={styles.checkInOutContainer}>
@@ -144,30 +312,45 @@ showToast(error.response.data.message,"Warning")
             <Text style={styles.timeText}>{timeString}</Text>
             <Text style={styles.dateText}>{dateString}</Text>
           </View>
-          {
-            dashboardDetails?.employeeDetails?.checkinTime === null &&
-             <TouchableOpacity 
-            onPress={() => handleAttendanceAction('checkin')}
-             style={styles.checkButton}>
-            <View style={styles.checkButtonInner}>
-              <MaterialCommunityIcons name="fingerprint" size={48} color="white" />
-              <Text style={styles.checkButtonText}>Check In</Text>
-              <Text style={styles.checkButtonSubtext}>Tap to clock in</Text>
-            </View> 
-          </TouchableOpacity>
+          
+          {dashboardDetails?.employeeDetails?.checkinTime === null &&
+            <TouchableOpacity 
+              onPress={() => handleAttendanceAction('checkin')}
+              style={[styles.checkButton, locationLoading && styles.disabledButton]}
+              disabled={locationLoading}
+            >
+              <View style={styles.checkButtonInner}>
+                {locationLoading ? (
+                  <MaterialCommunityIcons name="loading" size={48} color="white" />
+                ) : (
+                  <MaterialCommunityIcons name="fingerprint" size={48} color="white" />
+                )}
+                <Text style={styles.checkButtonText}>Check In</Text>
+                <Text style={styles.checkButtonSubtext}>
+                  {locationLoading ? "Getting location..." : "Tap to clock in"}
+                </Text>
+              </View> 
+            </TouchableOpacity>
           }
          
-          {/* Example for Check Out */}
-          { dashboardDetails?.employeeDetails?.checkinTime !== null && dashboardDetails?.employeeDetails?.checkoutTime === null &&
-          <TouchableOpacity 
-            onPress={() => handleAttendanceAction('checkout')}
-          style={[styles.checkButton, styles.checkOutButton]}>
-            <View style={styles.checkButtonInner}>
-              <MaterialCommunityIcons name="fingerprint" size={48} color="white" />
-              <Text style={styles.checkButtonText}>Check Out</Text>
-              <Text style={styles.checkButtonSubtext}>Tap to clock out</Text>
-            </View>
-          </TouchableOpacity>
+          {dashboardDetails?.employeeDetails?.checkinTime !== null && dashboardDetails?.employeeDetails?.checkoutTime === null &&
+            <TouchableOpacity 
+              onPress={() => handleAttendanceAction('checkout')}
+              style={[styles.checkButton, styles.checkOutButton, locationLoading && styles.disabledButton]}
+              disabled={locationLoading}
+            >
+              <View style={styles.checkButtonInner}>
+                {locationLoading ? (
+                  <MaterialCommunityIcons name="loading" size={48} color="white" />
+                ) : (
+                  <MaterialCommunityIcons name="fingerprint" size={48} color="white" />
+                )}
+                <Text style={styles.checkButtonText}>Check Out</Text>
+                <Text style={styles.checkButtonSubtext}>
+                  {locationLoading ? "Getting location..." : "Tap to clock out"}
+                </Text>
+              </View>
+            </TouchableOpacity>
           }
         </View>
 
@@ -325,7 +508,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
   },
-
+  locationStatusContainer: {
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  locationStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  locationStatusText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  accuracyText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
   checkInOutContainer: {
     width: '100%',
     backgroundColor: '#192633',
@@ -372,6 +578,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(239, 68, 68, 0.3)',
     shadowColor: "#EF4444",
   },
+  disabledButton: {
+    opacity: 0.6,
+  },
   checkButtonInner: {
     alignItems: 'center',
     gap: 8,
@@ -386,7 +595,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-
   summaryHeader: {
     width: '100%',
     marginTop: 32,
@@ -398,7 +606,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: -0.3,
   },
-
   detailsCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -439,7 +646,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     marginHorizontal: 8,
   },
-
   statsCard: {
     flexDirection: 'row',
     width: '100%',

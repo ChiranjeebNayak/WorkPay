@@ -181,11 +181,12 @@ function Payment() {
                         {/* <Text style={[styles.status, {color: status === "Paid" ? "#4dff91" : "#ffcc00"}]}>
                           {status}
                         </Text> */}
-                        <Text style={styles.historyCardAmount}>Rs{monthTotal}</Text>
+                        <Text style={styles.historyCardAmount}>Rs {monthTotal}</Text>
                         <MaterialCommunityIcons 
                           name={isOpen ? "chevron-up" : "chevron-down"} 
                           size={20} 
                           color="#fff" 
+                          style={{ marginLeft: 10 }}
                         />
                       </TouchableOpacity>
 
