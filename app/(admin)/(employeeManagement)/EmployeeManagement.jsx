@@ -93,7 +93,7 @@ function EmployeeManagement() {
         overtimeRate: formData.overtimeRate,
         joinedDate: formData.joinedDate,
         officeId: formData.officeId,
-        password: "welcome123"
+        password: formData.phone
       }, {
         headers: {
           authorization: `Bearer ${await getToken()}`,
