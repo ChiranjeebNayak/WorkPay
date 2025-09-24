@@ -35,10 +35,12 @@ function Leave() {
   const currentYear = new Date().getFullYear();
   const {employeeData, showToast} = useContextData();
 
-  // Helper function to format date to YYYY-MM-DD for comparison
-  const formatDateForComparison = (date) => {
-    return new Date(date).toISOString().slice(0, 10);
-  };
+// Correct helper: always get YYYY-MM-DD in *local timezone (IST)*
+const formatDateForComparison = (date) => {
+  const d = new Date(date);
+  return d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); 
+  // "en-CA" → gives YYYY-MM-DD format
+};
 
   // Helper function to check if a date is a holiday
   const isHoliday = (dateStr) => {
@@ -159,6 +161,7 @@ function Leave() {
         });
       });
       setRawHolidays(allHolidays);
+      console.log('Fetched holidays:', allHolidays);
       
       // Transform the response to match the frontend format
       const transformedHolidays = response.data.map(monthItem => ({
