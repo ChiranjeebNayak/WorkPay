@@ -161,7 +161,6 @@ const formatDateForComparison = (date) => {
         });
       });
       setRawHolidays(allHolidays);
-      console.log('Fetched holidays:', allHolidays);
       
       // Transform the response to match the frontend format
       const transformedHolidays = response.data.map(monthItem => ({
@@ -343,7 +342,13 @@ const formatDateForComparison = (date) => {
         {/* Enhanced Apply Leave Button */}
         <TouchableOpacity 
           style={styles.applyButton} 
-          onPress={() => setModalVisible(true)}
+          onPress={() => {
+            if(leaveHistory.filter((i)=>i.status === "PENDING").length > 0){
+                showToast("You have a pending leave application. Please wait for it to be processed before applying for a new leave.", "Warning");
+            }else {
+              setModalVisible(true)
+            }
+          }}
           activeOpacity={0.8}
         >
           <MaterialCommunityIcons name="plus-circle-outline" size={20} color="#fff" />
