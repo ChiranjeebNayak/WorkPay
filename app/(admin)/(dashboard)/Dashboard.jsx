@@ -5,7 +5,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { url } from '../../../constants/EnvValue';
 import { useContextData } from '../../../context/EmployeeContext';
@@ -16,6 +16,8 @@ import { formatDay } from "../../../utils/TimeUtils";
 function Dashboard() {
   const router = useRouter();
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [isAttendanceFinalized, setIsAttendanceFinalized] = useState(false);
   const {showToast} = useContextData()
 
   const dashboardDetails = async () => {
@@ -28,19 +30,50 @@ function Dashboard() {
       const data = response.data;
       setData(data);
     } catch (error) {
-      showToast(error.response.data.error,'Error');
+      showToast(error?.response?.data?.error || "Failed to fetch data",'Error');
       console.error('Error fetching dashboard details:', error);
       return null;
     }
   }
 
+  const handleFinalizeAttendance = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${url}/api/attendances/finalizeAttendance`, {}, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+      showToast(response.data.message || "Attendance finalized", "Success");
+      await dashboardDetails(); // refresh stats after finalization
+      await checkAttendanceFinalization(); // update finalization status
+    } catch (error) {
+      showToast(error?.response?.data?.error || "Failed to finalize attendance", "Error");
+      console.error("Error finalizing attendance:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
+
+  const checkAttendanceFinalization = async () => {
+    try {
+      const response = await axios.get(`${url}/api/attendances/checkBulkAttendanceStatus`, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+      setIsAttendanceFinalized(response.data.isBulkMarkingCompleted);
+    } catch (error) {
+      console.error('Error checking attendance finalization:', error);
+    }
+  }
 
   useEffect(() => {
     dashboardDetails();
+    checkAttendanceFinalization();
   }, []);
   
-  // Sample data - replace with real data
   const stats = [
     { icon: 'user', iconSet: 'AntDesign', color: '#4A9EFF', label: 'Total Employees',field:"totalEmployees" },
     { icon: 'user-check', iconSet: 'Feather', color: '#00D4AA', label: 'Present Today',field:"totalPresent" },
@@ -81,7 +114,27 @@ function Dashboard() {
         
         {/* Overview Section */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Overview</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Overview</Text>
+            <TouchableOpacity 
+              onPress={()=>{
+                if(!isAttendanceFinalized){
+                  handleFinalizeAttendance()
+                }
+                else{
+                  showToast("Attendance already finalized for today","Warning")
+                }
+              }} 
+              disabled={loading}
+              style={[styles.viewAllButton,{backgroundColor:'#4A9EFF'}]}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={[styles.viewAllText,{color:'#fff'}]}>Finalize Attendance</Text>
+              )}
+            </TouchableOpacity>
+          </View>
           <View style={styles.overview}>
             {stats.map((stat, index) => (
               <View key={index} style={styles.card}>
