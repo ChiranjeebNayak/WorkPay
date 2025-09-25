@@ -1,5 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -139,7 +140,7 @@ function index() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.logoContainer}>
-          <MaterialCommunityIcons name="briefcase-variant" size={40} color="#4da6ff" />
+          <Image source={require('../assets/images/icon.png')} style={styles.logo} />
         </View>
         <Text style={styles.title}>SANGHARSH GROUP</Text>
         {/* <Text style={styles.subtitle}>Manage your salary with ease</Text> */}
@@ -374,10 +375,10 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   logoContainer: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     backgroundColor: 'rgba(77, 166, 255, 0.1)',
-    borderRadius: 40,
+    borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -542,4 +543,10 @@ const styles = StyleSheet.create({
     borderColor: '#ff4757',
     borderWidth: 1,
   },
+  logo:{
+    width: 80,
+    height: 80,
+    resizeMode: 'contain',
+    borderRadius: 40,
+  }
 });

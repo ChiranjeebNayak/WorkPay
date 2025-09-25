@@ -161,7 +161,7 @@ function Dashboard() {
               <View key={index} style={styles.recentActivityItem}>
                 <View style={{gap:5}}>
                   <Text style={{color:'#FFFFFF',fontSize:18}}>{employee?.name}</Text>
-                  <Text style={{color:'#8A9BAE',fontSize:14}}>{employee?.id}</Text>
+                  <Text style={{color:'#8A9BAE',fontSize:14}}>ID: {employee?.id}</Text>
                 </View>
                 <View style={{paddingHorizontal:10,paddingVertical:5,borderRadius:8,backgroundColor:'#a51212ff',alignItems:'center',justifyContent:'center'}}>
                   <Text style={{color:'#ffffff',fontSize:14,fontWeight:'600'}}>Absent</Text>
