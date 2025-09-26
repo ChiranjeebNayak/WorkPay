@@ -28,8 +28,8 @@ function EmployeeManagement() {
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [employeeToDelete, setEmployeeToDelete] = useState(null);
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [employeeToStatusUpdate, setEmployeeToStatusUpdate] = useState(null);
   const [isAdding, setIsAdding] = useState(true);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const {showToast} = useContextData();
@@ -39,7 +39,7 @@ function EmployeeManagement() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   
-  // Form state
+  // Form state  
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -139,34 +139,36 @@ function EmployeeManagement() {
     }
   }
 
-  const showDeleteConfirmation = (employee) => {
-    setEmployeeToDelete(employee);
-    setDeleteModalVisible(true);
+  const showStatusUpdateConfirmation = (employee) => {
+    setEmployeeToStatusUpdate(employee);
+    setStatusModalVisible(true);
   };
 
-  const confirmDeleteEmployee = async () => {
-    if (!employeeToDelete) return;
+  const confirmStatusUpdate = async () => {
+    if (!employeeToStatusUpdate) return;
     
     try {
-      const response = await axios.delete(`${url}/api/employees/delete/${employeeToDelete.id}`, {
+      const response = await axios.put(`${url}/api/employees/update-status/${employeeToStatusUpdate.id}`,
+      {
+        status: employeeToStatusUpdate.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
+      }, {
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
       });
-      console.log('Employee deleted:', response.data.message);
       showToast(response.data.message,"Success")
-      setDeleteModalVisible(false);
-      setEmployeeToDelete(null);
+      setStatusModalVisible(false);
+      setEmployeeToStatusUpdate(null);
       fetchEmployees();
     } catch (error) {
        showToast(error.response.data.error,"Error")
-      console.error('Error deleting employee:', error);
+      console.error('Error Updating employee Status :', error);
     }
   };
 
-  const cancelDelete = () => {
-    setDeleteModalVisible(false);
-    setEmployeeToDelete(null);
+  const cancelStatusUpdate = () => {
+    setStatusModalVisible(false);
+    setEmployeeToStatusUpdate(null);
   };
 
   const handleEmployeeAddandEdit = (type) => {
@@ -289,6 +291,9 @@ function EmployeeManagement() {
             <Text style={styles.employeeName}>{item.name}</Text>
             <Text style={styles.employeePhone}>{item.phone}</Text>
           </View>
+          <View style={{marginLeft: 'auto',borderRadius: 4,backgroundColor: item.status === 'ACTIVE' ? '#4CAF50' : '#F44336',paddingHorizontal: 8,paddingVertical: 2,alignSelf: 'flex-start',}}>
+                <Text style={[styles.employeeRole,{color:"#ffffff",fontWeight:"bold"}]}>{item.status}</Text>
+          </View>
         </View>
         
         <View style={styles.salaryInfo}>
@@ -318,13 +323,25 @@ function EmployeeManagement() {
           <Text style={[styles.actionText, { color: '#F5A623' }]}>Edit</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity 
+        {/* <TouchableOpacity 
           style={[styles.actionButton, styles.deleteButton]} 
           onPress={() => showDeleteConfirmation(item)}
         >
           <Feather name="trash-2" size={16} color="#D0021B" />
           <Text style={[styles.actionText, { color: '#D0021B' }]}>Delete</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
+
+          {/* Active Inactive button */}
+          <TouchableOpacity
+            style={[styles.actionButton, item.status === 'ACTIVE' ? styles.deleteButton : {backgroundColor: '#4CAF5015'}]}
+            onPress={() => showStatusUpdateConfirmation(item)}
+          >
+            <Feather name={item.status === 'ACTIVE' ? "pause" : "play"} size={16} color={item.status === 'ACTIVE' ? "#D0021B" : "#4CAF50"} />
+            <Text style={[styles.actionText, { color: item.status === 'ACTIVE' ? '#D0021B' : '#4CAF50' }]}>
+              {item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+            </Text>
+          </TouchableOpacity>
+
       </View>
     </View>
   );
@@ -489,38 +506,42 @@ function EmployeeManagement() {
       <Modal
         animationType="fade"
         transparent={true}
-        visible={deleteModalVisible}
-        onRequestClose={cancelDelete}
+        visible={statusModalVisible}
+        onRequestClose={cancelStatusUpdate}
       >
         <View style={styles.deleteModalOverlay}>
           <View style={styles.deleteModalContent}>
             <View style={styles.deleteIconContainer}>
               <View style={styles.deleteIcon}>
-                <Feather name="trash-2" size={32} color="#D0021B" />
+                <Feather name="check-circle" size={32} color="#0dc025ff" />
               </View>
             </View>
-            
-            <Text style={styles.deleteTitle}>Delete Employee</Text>
+
+            <Text style={styles.deleteTitle}>Update Employee Status</Text>
             <Text style={styles.deleteMessage}>
-              Are you sure you want to delete{' '}
+              Are you sure you want to update the status of {' '}
               <Text style={styles.employeeNameHighlight}>
-                {employeeToDelete?.name}
-              </Text>
-              ? This action cannot be undone.
+                {employeeToStatusUpdate?.name}
+              </Text>{' '}
+              from {employeeToStatusUpdate?.status === 'ACTIVE' ? <Text style={{color: '#0dc025ff',fontWeight: 'bold'}}>
+                ACTIVE</Text> : <Text style={{color: '#D0021B',fontWeight: 'bold'}}>INACTIVE</Text>} 
+                {` `} to {` `}
+                {employeeToStatusUpdate?.status === 'ACTIVE' ? <Text style={{color: '#D0021B',fontWeight: 'bold'}}>INACTIVE</Text> : 
+                <Text style={{color: '#0dc025ff',fontWeight: 'bold'}}>ACTIVE</Text>}?
             </Text>
 
             <View style={styles.deleteModalActions}>
               <TouchableOpacity 
                 style={styles.deleteCancelButton} 
-                onPress={cancelDelete}
+                onPress={cancelStatusUpdate}
               >
                 <Text style={styles.deleteCancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.deleteConfirmButton} 
-                onPress={confirmDeleteEmployee}
+                onPress={confirmStatusUpdate}
               >
-                <Text style={styles.deleteConfirmButtonText}>Delete</Text>
+                <Text style={styles.deleteConfirmButtonText}>Update</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -834,11 +855,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#D0021B15',
+    backgroundColor: '#58d31115',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#D0021B30',
+    borderColor: '#58d31130',
   },
   deleteTitle: {
     fontSize: 20,
@@ -879,11 +900,11 @@ const styles = StyleSheet.create({
   },
   deleteConfirmButton: {
     flex: 1,
-    backgroundColor: '#D0021B',
+    backgroundColor: '#0dc025ff',
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
-    shadowColor: '#D0021B',
+    shadowColor: '#0dc025ff',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
