@@ -657,7 +657,7 @@ const deleteOffice = async (officeId) => {
                                               }}
                                               >
                                                 <Text style={styles.saveButtonText}>
-                                                  {actionType === 'edit' ? 'Update' : 'Add'} Employee
+                                                  {actionType === 'edit' ? 'Update' : 'Add'} Office
                                                 </Text>
                                               </TouchableOpacity>
                                   </View>
