@@ -234,6 +234,24 @@ const updateOfficeSettings = async () => {
   }
 };
 
+const deleteOffice = async (officeId) => {
+  try {
+    const response = await axios.delete(`${url}/api/offices/delete/${officeId}`, {
+      headers: {
+        authorization: `Bearer ${await getToken()}`
+      }
+    });
+    if(response.data.message){
+      showToast('Office deleted successfully!', 'Success');
+      fetchOfficeDetails();
+    }
+  } catch (error) {
+    console.error('Error deleting office:', error);
+    showToast(error.response.data.error, 'Error');
+  } 
+};
+
+
   const getCurrentLocation = async () => {
     try {
       setIsLoading(true);
@@ -402,6 +420,7 @@ const updateOfficeSettings = async () => {
               <View style={{ alignItems: 'flex-end', marginTop: 10 ,flexDirection:'row',justifyContent:'flex-end',gap:10,width:'100%'}}>
 
                 <TouchableOpacity 
+                  onPress={() => deleteOffice(office.id)}
                 style={{ paddingHorizontal: 15, 
                 paddingVertical: 8, borderRadius: 8, 
                   justifyContent:'center',
