@@ -9,6 +9,7 @@ import { Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { url } from '../../../constants/EnvValue';
 import { useContextData } from "../../../context/EmployeeContext";
+import { useOfficeContextData } from "../../../context/OfficeContext";
 import { getToken } from '../../../services/ApiService';
 
 function OfficeSettings() {
@@ -28,7 +29,8 @@ function OfficeSettings() {
   const [officeList, setOfficeList] = useState([]);
   const [actionType, setActionType] = useState('add'); 
   const router = useRouter();
-  const {showToast} = useContextData()
+  const {showToast} = useContextData();
+  const {setOfficeData} = useOfficeContextData();
 
   const fetchOfficeDetails = async () => {
     try {
@@ -47,7 +49,8 @@ function OfficeSettings() {
       //   latitude: data.latitude || null,
       //   longitude: data.longitude || null
       // });
-      setOfficeList(data.offices)
+      setOfficeList(data.offices);
+      setOfficeData(data.offices)
     } catch (error) {
       showToast(error.response.data.error,"Error")
       console.error('Error fetching office details:', error);

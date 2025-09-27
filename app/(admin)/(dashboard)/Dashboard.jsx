@@ -9,6 +9,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { url } from '../../../constants/EnvValue';
 import { useContextData } from '../../../context/EmployeeContext';
+import { useOfficeContextData } from '../../../context/OfficeContext';
 import { getToken, removeToken } from '../../../services/ApiService';
 import { formatDay } from "../../../utils/TimeUtils";
 
@@ -18,19 +19,31 @@ function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isAttendanceFinalized, setIsAttendanceFinalized] = useState(false);
-  const {showToast} = useContextData()
+  const {showToast} = useContextData();
+  const {setOfficeData} = useOfficeContextData();
+  const [currentOffice,setCurrentOffice] = useState(null);  
+  const [showOfficeList,setShowOfficeList] = useState(false);
+  const [isEmployeesAvailable,setIsEmployeesAvailable] = useState(false);
 
-  const dashboardDetails = async () => {
+  // Modified dashboardDetails to accept officeId parameter
+  const dashboardDetails = async (officeId) => {
     try {
-      const response = await axios.get(`${url}/api/attendances/getTodayAttendance`, {
+      let apiUrl = officeId
+        ? `${url}/api/attendances/getTodayAttendance/${officeId}`
+        : `${url}/api/attendances/getTodayAttendance`; // This won't work with :officeId route
+        
+      const response = await axios.get(apiUrl, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'Content-Type': 'application/json',
         }
       });
       const data = response.data;
       setData(data);
+      setOfficeData(data.offices);
+      setCurrentOffice(data.office.id);
     } catch (error) {
-      showToast(error?.response?.data?.error || "Failed to fetch data",'Error');
+      showToast(error?.response?.data?.error ,'Error');
       console.error('Error fetching dashboard details:', error);
       return null;
     }
@@ -39,13 +52,16 @@ function Dashboard() {
   const handleFinalizeAttendance = async () => {
     try {
       setLoading(true);
-      const response = await axios.post(`${url}/api/attendances/finalizeAttendance`, {}, {
+       let apiUrl = currentOffice
+        ? `${url}/api/attendances/finalizeAttendance/${currentOffice}`
+        : `${url}/api/attendances/finalizeAttendance`; // This won't work with :officeId route
+      const response = await axios.post(apiUrl, {}, {
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
       });
       showToast(response.data.message || "Attendance finalized", "Success");
-      await dashboardDetails(); // refresh stats after finalization
+      await dashboardDetails(currentOffice); // refresh stats after finalization
       await checkAttendanceFinalization(); // update finalization status
     } catch (error) {
       showToast(error?.response?.data?.error || "Failed to finalize attendance", "Error");
@@ -55,19 +71,31 @@ function Dashboard() {
     }
   }
 
-
-  const checkAttendanceFinalization = async () => {
+  const checkAttendanceFinalization = async (officeId) => {
     try {
-      const response = await axios.get(`${url}/api/attendances/checkBulkAttendanceStatus`, {
+      let apiUrl = officeId
+        ? `${url}/api/attendances/checkBulkAttendanceStatus/${officeId}`
+        : `${url}/api/attendances/checkBulkAttendanceStatus`; // This won't work with :officeId route
+      const response = await axios.get(apiUrl, {
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
       });
       setIsAttendanceFinalized(response.data.isBulkMarkingCompleted);
+      setIsEmployeesAvailable(response.data.totalEmployees > 0);
     } catch (error) {
       console.error('Error checking attendance finalization:', error);
     }
   }
+
+  // Modified office selection handler
+  const handleOfficeSelect = (officeId) => {
+    setCurrentOffice(officeId);
+    setShowOfficeList(false);
+    dashboardDetails(officeId); // Immediately fetch data for selected office
+      checkAttendanceFinalization(officeId);
+  }
+
 
   useEffect(() => {
     dashboardDetails();
@@ -114,14 +142,41 @@ function Dashboard() {
         
         {/* Overview Section */}
         <View style={styles.sectionContainer}>
+
+          {/* office selector */}
+          <View style={{marginBottom:20,width:'100%',gap:10}}>
+                <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',borderWidth:1,borderColor:'#2A3441',padding:10,borderRadius:8}}>
+                    <Text style={{color:'#FFFFFF',fontSize:18}}>{currentOffice ? data?.offices?.find(office => office.id === currentOffice)?.name : data?.office?.name}</Text>
+                    <TouchableOpacity onPress={() => setShowOfficeList(!showOfficeList)}>
+                      <AntDesign name={showOfficeList ? "up" : "down"} size={20} color="#4A9EFF" />
+                    </TouchableOpacity>
+                </View>
+
+                {
+                  showOfficeList && <View>
+                    {data?.offices?.map((office)=>(
+                      <TouchableOpacity 
+                        key={office.id}
+                        onPress={() => handleOfficeSelect(office.id)}
+                        style={{padding:10,backgroundColor: office.id === currentOffice ? '#4A9EFF' : '#192633',borderRadius:8,marginTop:5}}
+                      > 
+                        <Text style={{color:'#FFFFFF',fontSize:16}}>{office.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                }
+          </View>
+
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Overview</Text>
             <TouchableOpacity 
               onPress={()=>{
                 if(!isAttendanceFinalized){
                   handleFinalizeAttendance()
+                }else if (!isEmployeesAvailable && isAttendanceFinalized) {
+                  showToast("No Employees Available","Warning")
                 }
-                else{
+                else {
                   showToast("Attendance already finalized for today","Warning")
                 }
               }} 
