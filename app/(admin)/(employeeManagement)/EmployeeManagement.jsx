@@ -19,8 +19,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { url } from '../../../constants/EnvValue';
 import { useContextData } from "../../../context/EmployeeContext";
+import { useOfficeContextData } from '../../../context/OfficeContext';
 import { getToken } from '../../../services/ApiService';
-
 
 function EmployeeManagement() {
   const router = useRouter();
@@ -30,10 +30,10 @@ function EmployeeManagement() {
   const [modalVisible, setModalVisible] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [employeeToStatusUpdate, setEmployeeToStatusUpdate] = useState(null);
-  const [isAdding, setIsAdding] = useState(true);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const {showToast} = useContextData();
-  const [officeData,setOfficeData] = useState({});
+  const {officeData} = useOfficeContextData();
+  const [showOfficeList, setShowOfficeList] = useState(false);
   
   // Date picker states
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -47,25 +47,9 @@ function EmployeeManagement() {
     baseSalary: '',
     overtimeRate: '',
     joinedDate: '',
-    officeId: officeData?.id,
+    officeId: null,
   });
 
-    const fetchOfficeDetails = async () => {
-    try {
-      const response = await axios.get(`${url}/api/offices/`, {
-        headers: {
-          authorization: `Bearer ${await getToken()}`
-        }
-      });
-
-      // Populate form data with fetched data
-      const data = response.data;
-      setOfficeData(data);
-    } catch (error) {
-      showToast(error.response.data.error,"Error")
-      console.error('Error fetching office details:', error);
-    }
-  }
 
   const fetchEmployees = async () => {
     try {
@@ -196,7 +180,6 @@ function EmployeeManagement() {
   // Sample data - replace with API call
   useEffect(() => {
     fetchEmployees();
-    fetchOfficeDetails();
   }, []);
 
   // Search functionality
@@ -220,7 +203,7 @@ function EmployeeManagement() {
       baseSalary: '',
       overtimeRate: '',
       joinedDate: '',
-      officeId: officeData?.id ,
+      officeId: null ,
     });
     setEditingEmployee(null);
     setSelectedDate(new Date());
@@ -275,6 +258,10 @@ function EmployeeManagement() {
     }
     if (!formData.joinedDate.trim()) {
       showToast('Please select joined date','Error');
+      return false;
+    }
+    if (!formData.officeId) {
+      showToast('Please select office','Error');
       return false;
     }
     return true;
@@ -480,12 +467,41 @@ function EmployeeManagement() {
                     keyboardType="numeric"
                   />
                 </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Office Name</Text>
+                  <TouchableOpacity 
+                    onPress={() => setShowOfficeList(!showOfficeList)}
+                  style={styles.input}>
+                    <Text style={{color: formData.officeId ? '#FFFFFF' : '#8A9BAE'}}>
+                      {officeData?.find(office => office.id === formData.officeId)?.name || 'Select office'}
+                    </Text>
+                  </TouchableOpacity>
+                  {showOfficeList && <View style={{width:"100%",padding:10,backgroundColor:"#111a22",borderRadius:8,marginTop:4}}>
+                    {officeData?.map(office => (
+                      <TouchableOpacity 
+                        key={office.id}
+                        onPress={() => {
+                          setFormData({...formData, officeId: office.id});
+                          setShowOfficeList(false);
+                        }}
+                        style={{paddingVertical:8}}
+                      > 
+                        <Text style={{color: office.id === formData.officeId ? '#FFFFFF' : '#8A9BAE'}}>{office.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                    </View>}
+                  </View>
               </View>
 
               <View style={styles.modalActions}>
                 <TouchableOpacity 
                   style={styles.cancelButton} 
-                  onPress={() => setModalVisible(false)}
+                  onPress={() => {
+                    setModalVisible(false)
+                    setShowOfficeList(false);
+
+                  }}
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
