@@ -1,6 +1,6 @@
 import AntDesign from '@expo/vector-icons/AntDesign';
 import axios from 'axios';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,17 +15,19 @@ function LeaveRequests() {
   const [activeTab, setActiveTab] = useState('pendingLeaves');
   const [data,setData] = useState([]);
   const {showToast} = useContextData();
+  const {id} = useLocalSearchParams();
 
   const fetchLeaveRequest = async ()=>{
     try{
-       const response = await axios.get(`${url}/api/leaves/summary`, {
+         let apiUrl = id ? `${url}/api/leaves/summary/${id}` : `${url}/api/leaves/summary`;
+       const response = await axios.get(apiUrl, {
         headers: {
           authorization: `Bearer ${await getToken()}`
         }
       });
       const data = response.data;
       setData(data);
-      console.log(data)
+      console.log(data.office)
     }catch(error){
       showToast(error.response.data.error,'Error');
       console.error("Error fetching leaves request",error)

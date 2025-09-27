@@ -231,7 +231,7 @@ function Dashboard() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Leave Requests</Text>
             <TouchableOpacity 
-              onPress={() => router.push('/LeaveRequests')} 
+              onPress={() =>router.push({ pathname: '/LeaveRequests', params: { id: currentOffice } })}
               style={styles.viewAllButton}
             >
               <Text style={styles.viewAllText}>View All</Text>
