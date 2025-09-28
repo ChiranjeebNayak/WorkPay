@@ -125,7 +125,7 @@ useEffect(()=>{
       {/* Content */}
       <ScrollView style={styles.content}>
         <View style={styles.requestsContainer}>
-          {data?.[activeTab]?.map((request, index) => (
+         {data?.[activeTab]?.length > 0 ? data?.[activeTab]?.map((request, index) => (
             <View key={request.id} style={styles.requestItem}>
               <View style={styles.requestInfo}>
                 <Text style={styles.requestName}>{request?.employee.name}</Text>
@@ -159,7 +159,7 @@ useEffect(()=>{
                 )}
               </View>
             </View>
-          ))}
+          )) : <View style={{alignItems:'center',marginTop:50}}><Text style={{color:'#8A9BAE',fontSize:16}}>No {tabs.find(tab => tab.key === activeTab)?.label} found.</Text></View>}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -179,8 +179,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#2A3441',
   },
   headerLeft: {
     flexDirection: 'row',
