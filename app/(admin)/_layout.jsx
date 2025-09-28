@@ -1,5 +1,6 @@
-import { Tabs } from 'expo-router';
+import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -31,28 +32,29 @@ function CustomTabBar({ state, descriptors, navigation }) {
           }
         };
 
-let iconName;
-switch (route.name.toLowerCase()) {
-  case '(home)':
-    iconName = 'home-outline';
-    break;
-  case 'attendance':
-    iconName = 'calendar-outline';
-    break;
-  case 'payment':
-    iconName = 'card-outline';
-    break;
-  case 'leave':
-    iconName = 'document-text-outline';
-    break;
-  default:
-    iconName = 'ellipse-outline';
-}
+        let iconName;
+        switch (route.name) {
+          case '(dashboard)':
+            iconName = 'home-outline';
+            break;
+          case '(employeeManagement)':
+            iconName = 'people-outline';
+            break;
+          case 'SalaryManagement':
+            iconName = 'cash-outline';
+            break;
+          case '(settings)':
+            iconName = 'settings-outline';
+            break;
+          default:
+            iconName = 'ellipse-outline';
+        }
 
         return (
           <TouchableOpacity
             key={route.key}
             accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
             onPress={onPress}
             style={styles.tab}
           >
@@ -62,7 +64,7 @@ switch (route.name.toLowerCase()) {
               color={isFocused ? '#1e90ff' : '#999'}
             />
             <Text style={{ color: isFocused ? '#1e90ff' : '#999', fontSize: 12 }}>
-              {label.charAt(0).toUpperCase() + label.slice(1)}
+              {label}
             </Text>
           </TouchableOpacity>
         );
@@ -71,16 +73,18 @@ switch (route.name.toLowerCase()) {
   );
 }
 
-export default function EmployeeLayout() {
+function AdminLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <CustomTabBar {...props} />}>
-      <Tabs.Screen name="(home)" options={{ title: 'Home' }} />
-      <Tabs.Screen name="Attendance" options={{ title: 'Attendance' }} />
-      <Tabs.Screen name="Payment" options={{ title: 'Payment' }} />
-      <Tabs.Screen name="Leave" options={{ title: 'Leaves' }} />
+      <Tabs.Screen name="(dashboard)"  options={{ title: 'Dashboard' }} />
+      <Tabs.Screen name="(employeeManagement)" options={{ title: 'Staff' }} />
+      <Tabs.Screen name="SalaryManagement" options={{ title: 'Payroll' }} />
+      <Tabs.Screen name="(settings)" options={{ title: 'Settings' }} />
     </Tabs>
   );
 }
+
+export default AdminLayout;
 
 const styles = StyleSheet.create({
   container: {
