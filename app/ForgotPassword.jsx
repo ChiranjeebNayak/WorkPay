@@ -1,6 +1,9 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import axios from 'axios';
+import { FirebaseRecaptchaVerifierModal } from "expo-firebase-recaptcha";
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { PhoneAuthProvider, signInWithCredential } from "firebase/auth";
+import { useRef, useState } from 'react';
 import {
   Alert,
   Keyboard,
@@ -13,6 +16,10 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { url } from "../constants/EnvValue";
+import { useContextData } from '../context/EmployeeContext';
+import { app, auth } from "./firebase";
+
 
 function ForgotPassword() {
   const [step, setStep] = useState(1); // 1: Enter details, 2: Verify OTP, 3: Reset password
@@ -26,57 +33,128 @@ function ForgotPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const {showToast} = useContextData();
+  const [confirmationResult, setConfirmationResult] = useState(null);
+    const recaptchaVerifier = useRef(null);
+  
+  const [token, setToken] = useState(null);
 
-  const handleSendOTP = () => {
-    if (!contactInfo.trim()) {
-      Alert.alert('Error', `Please enter your ${isEmployee ? 'phone number' : 'email address'}`);
-      return;
-    }
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+
+    const sendOTP = async (phone) => {
+    try {
+      const phoneProvider = new PhoneAuthProvider(auth);
+      const verificationId = await phoneProvider.verifyPhoneNumber(
+        phone,
+        recaptchaVerifier.current
+      );
+      setConfirmationResult(verificationId);
+      console.log('OTP sent to', phone);
       setStep(2);
-    }, 1500);
+    } catch (err) {
+      console.log(err.message);
+    }
   };
 
-  const handleVerifyOTP = () => {
-    if (!otp.trim() || otp.length !== 6) {
-      Alert.alert('Error', 'Please enter a valid 6-digit OTP');
+  const verifyOTP = async () => {
+    try {
+      const credential = PhoneAuthProvider.credential(confirmationResult, otp);
+      const userCred = await signInWithCredential(auth, credential);
+      const idToken = await userCred.user.getIdToken();
+
+      const { token } = await verifyOtpAndGenerateTempToken(idToken);
+      if (token) {
+        setStep(3);
+        showToast('OTP verified successfully', 'Success');
+        setToken(token);
+        console.log('Temporary token generated:', token);
+      }
+    } catch (err) {
+      Alert.alert("Verification failed", err.response.data.error);
+    }
+  };
+
+  const verifyOtpAndGenerateTempToken = async (idToken) => {
+    try {
+      const response = await axios.post(`${url}/api/employees/verify-otp`, { idToken });
+      return response.data;
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      throw error;
+    }
+  };
+
+  const handlePhoneOTP = async ()=>{
+    if(!contactInfo.trim()){
+      Alert.alert('Error', 'Please enter your phone number');
       return;
     }
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep(3);
-    }, 1500);
-  };
+    try {
+        const isPhoneValid = await axios.get(`${url}/api/employees/phone/${contactInfo}`, {
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      if(!isPhoneValid.data.employeeFound){
+        showToast('Phone number not found', 'error');
+        setIsLoading(false);
+        return;
+      }
+      await sendOTP(`+91${contactInfo}`);
 
-  const handleResetPassword = () => {
+    } catch (error) {
+      showToast('Failed to send OTP. Please try again.', 'error');
+      console.error('Error sending OTP:', error);
+    }finally {
+      setIsLoading(false);
+    }
+  }
+
+const handleResetPassword = async () => {
     if (!newPassword.trim() || newPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      showToast( 'Password must be at least 6 characters long','Warning');
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showToast( 'Passwords do not match','Error');
       return;
     }
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      Alert.alert('Success', 'Password reset successfully!', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
-    }, 1500);
+    try{
+       const response = await axios.post(`${url}/api/employees/reset-password`, {
+        newPassword:newPassword
+      },
+      {
+        headers: {
+          authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      });
+      if(response.data.message){
+          showToast('Password Updated Successfully','Success');
+          router.back();
+      }
+      
+    }catch(error){
+    showToast('Failed to Reset Password. Please try again.', 'error');
+      console.error('Error sending OTP:', error.response.data.error);
+    }finally{
+      setIsLoading(false)
+    }
   };
+
 
   const renderStepContent = () => {
     switch (step) {
       case 1:
         return (
           <>
+          <FirebaseRecaptchaVerifierModal
+            ref={recaptchaVerifier}
+            firebaseConfig={app.options} 
+          />
             <View style={styles.stepHeader}>
               <MaterialCommunityIcons name="lock-reset" size={60} color="#4da6ff" />
               <Text style={styles.stepTitle}>Forgot Password?</Text>
@@ -120,7 +198,7 @@ function ForgotPassword() {
             </View>
 
             <TouchableOpacity
-              onPress={handleSendOTP}
+              onPress={handlePhoneOTP}
               style={[styles.actionButton, isLoading && styles.disabledButton]}
               disabled={isLoading}
             >
@@ -165,7 +243,7 @@ function ForgotPassword() {
             </View>
 
             <TouchableOpacity
-              onPress={handleVerifyOTP}
+              onPress={verifyOTP}
               style={[styles.actionButton, isLoading && styles.disabledButton]}
               disabled={isLoading}
             >
