@@ -132,7 +132,7 @@ function Home() {
       console.log(`Distance from office: ${distance.toFixed(2)} meters`);
 
       // Check if user is within allowed range
-      const MAX_DISTANCE = 200; // meters
+      const MAX_DISTANCE = 100; // meters
       const MIN_DISTANCE = 0;   // meters
 
       if (distance < MIN_DISTANCE || distance > MAX_DISTANCE) {
