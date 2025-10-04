@@ -21,6 +21,7 @@ function OfficeSettings() {
     longitude: null,
     name: '',
     id: null,
+    range:'1000'
   });
   const [showStart, setShowStart] = useState(false);
   const [showEnd, setShowEnd] = useState(false);
@@ -66,6 +67,7 @@ function OfficeSettings() {
       latitude: data.latitude || null,
       longitude: data.longitude || null,
       id: data.id || null,
+      range: data.range ? String(data.range) : '1000'
     });
     setModalVisible(true);
   }
@@ -79,6 +81,7 @@ function OfficeSettings() {
       longitude: null,
       name: '',
       id: null,
+      range:'1000'
     });
   }
 
@@ -137,7 +140,8 @@ const addOffice = async () => {
         breakTime: formData.breakTime,
         latitude: formData.latitude,
         longitude: formData.longitude,
-        name: formData.name
+        name: formData.name,
+        range:formData.range
       }, {
         headers: {
           authorization: `Bearer ${await getToken()}`
@@ -213,7 +217,8 @@ const updateOfficeSettings = async () => {
       breakTime: formData.breakTime,
       latitude: formData.latitude,
       longitude: formData.longitude,
-      name: formData.name
+      name: formData.name,
+      range:formData.range
     }, {
       headers: {
         authorization: `Bearer ${await getToken()}`
@@ -414,7 +419,8 @@ const deleteOffice = async (officeId) => {
               <Text style={{ color: '#8f9eb3' }}>
                 Timings: {office.checkin ? new Date(office.checkin).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'} - {office.checkout ? new Date(office.checkout).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
               </Text>
-              <Text style={{ color: '#8f9eb3' }}>Break Time: {office.breakTime} mins</Text>
+              <Text style={{ color: '#8f9eb3' }}>Break Time: {office.breakTime} mins </Text>
+              <Text  style={{ color: '#8f9eb3' }}>Office Range: {office.range} meters</Text>
 
               {/* Edit button - functionality to be implemented */}
               <View style={{ alignItems: 'flex-end', marginTop: 10 ,flexDirection:'row',justifyContent:'flex-end',gap:10,width:'100%'}}>
@@ -465,7 +471,11 @@ const deleteOffice = async (officeId) => {
         }}
       >
          <View style={styles.modalOverlay}>
-                  <View style={styles.modalContent}>
+          <View style={styles.modalContainer}>
+            <ScrollView 
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={true}
+            >
 
 
 
@@ -580,7 +590,7 @@ const deleteOffice = async (officeId) => {
 
                               {/* Break Time */}
                               <View style={{ gap: 10, marginTop: 20 }}>
-                                <Text style={{ color: '#8f9eb3', fontSize: 16, fontWeight: 'bold' }}>BREAK TIME</Text>
+                                <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: 'bold' }}>Break Time</Text>
                                 <View style={{ flexDirection: 'row', gap: 10 }}>
                                   {/* Hours */}
                                   <View style={{ flex: 1 }}>
@@ -630,6 +640,28 @@ const deleteOffice = async (officeId) => {
                                 </Text>
                               </View>
 
+
+                                {/* Checkin Range */}
+                              <View style={{ gap: 10, marginBottom: 10,marginTop:10 }}>
+                                <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: 'bold' }}>Check-In/Check-Out Range</Text>
+                                <TextInput
+                                  value={formData.range}
+                                  keyboardType='number-pad'
+                                  onChangeText={(text) => updateFormData('range', text)}
+                                  placeholder="Enter Check-In/Out Range in Meters"
+                                  placeholderTextColor="#8f9eb3"
+                                  style={{
+                                    borderWidth: 1,
+                                    borderColor: '#334155',
+                                    borderRadius: 10,
+                                    padding: 15,
+                                    color: '#fff'
+                                  }}
+                                />
+                              </View>
+
+
+
                                <View style={styles.modalActions}>
                                               <TouchableOpacity 
                                                 style={styles.cancelButton} 
@@ -661,9 +693,9 @@ const deleteOffice = async (officeId) => {
                                                 </Text>
                                               </TouchableOpacity>
                                   </View>
-                  </View>
+            </ScrollView>
           </View>
-
+        </View>
       </Modal>
       </ScrollView>
      </TouchableWithoutFeedback>
@@ -702,7 +734,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-    // Modal Styles
+  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -710,17 +742,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  modalContent: {
-    backgroundColor: '#192633',
-    borderRadius: 12,
+  modalContainer: {
     width: '100%',
     maxHeight: '90%',
-    padding: 20,
+    backgroundColor: '#192633',
+    borderRadius: 12,
   },
-   modalActions: {
+  modalScrollContent: {
+    padding: 20,
+    flexGrow: 1,
+  },
+  modalActions: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 20,
+    marginTop: 10,
   },
   cancelButton: {
     flex: 1,
