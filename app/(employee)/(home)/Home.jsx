@@ -350,6 +350,7 @@ const styles = StyleSheet.create({
   },
   headerTitleContainer: {
     gap: 8,
+    maxWidth:"80%",
   },
   headerTitle: {
     fontSize: 24,
@@ -383,6 +384,7 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     position: 'relative',
+    alignSelf:"flex-start"
   },
   menuButton: {
     width: 44,
