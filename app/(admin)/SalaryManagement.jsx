@@ -28,9 +28,13 @@ function AdminSalaryManagement() {
   // States
   const [loading, setLoading] = useState(true)
   const [advanceModalVisible, setAdvanceModalVisible] = useState(false)
+  const [deductionModalVisible, setDeductionModalVisible] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState(null)
   const [advanceAmount, setAdvanceAmount] = useState(null)
+  const [deductionAmount, setDeductionAmount] = useState(null)
+  const [deductionDescription, setDeductionDescription] = useState(null)
   const [processingAdvance, setProcessingAdvance] = useState(false)
+  const [processingDeduction, setProcessingDeduction] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [paymentData,setPaymentData] = useState([]);
@@ -114,16 +118,16 @@ function AdminSalaryManagement() {
       try {
       const response = await axios.post(`${url}/api/transactions/add-transaction`, 
         {
-          empId:selectedEmployee.empId,
-          amount:(selectedEmployee.baseSalary + 
-        calculateMonthTotals(selectedEmployee.transactions).overtime 
-        - calculateMonthTotals(selectedEmployee.transactions).deduction
-        -calculateMonthTotals(selectedEmployee.transactions).advance
+          empId:employee.empId,
+          amount:(employee.baseSalary + 
+        calculateMonthTotals(employee.transactions).overtime 
+        - calculateMonthTotals(employee.transactions).deduction
+        -calculateMonthTotals(employee.transactions).advance
       ),
-          description:`Salary payment for ${selectedEmployee.name} of amount ${selectedEmployee.baseSalary + 
-        calculateMonthTotals(selectedEmployee.transactions).overtime 
-        - calculateMonthTotals(selectedEmployee.transactions).deduction
-        -calculateMonthTotals(selectedEmployee.transactions).advance
+          description:`Salary payment for ${employee.name} of amount ${employee.baseSalary + 
+        calculateMonthTotals(employee.transactions).overtime 
+        - calculateMonthTotals(employee.transactions).deduction
+        -calculateMonthTotals(employee.transactions).advance
       }`,
           type:"SALARY"
         }
@@ -135,6 +139,7 @@ function AdminSalaryManagement() {
       });
       const data = response.data;
       showToast(data.message,"Success");
+      fetchPaymentHistory();
       console.log(data)
     } catch (err) {
       showToast(err.response.data.error,"Error")
@@ -147,6 +152,13 @@ function AdminSalaryManagement() {
     setSelectedEmployee(employee)
     setAdvanceAmount(null)
     setAdvanceModalVisible(true)
+  }
+
+  const handleDeductionPayment = (employee) => {
+    setSelectedEmployee(employee)
+    setDeductionAmount(null)
+    setDeductionDescription(null)
+    setDeductionModalVisible(true)
   }
 
   const processAdvancePayment = async () => {
@@ -162,6 +174,7 @@ function AdminSalaryManagement() {
       return
       }
       try {
+      setProcessingAdvance(true);
       const response = await axios.post(`${url}/api/transactions/add-transaction`, 
         {
           empId:selectedEmployee.empId,
@@ -185,8 +198,47 @@ function AdminSalaryManagement() {
     } catch (err) {
       showToast(err.response.data.error,"Error");
       console.log(err);
+    } finally {
+      setProcessingAdvance(false);
     }
       
+  }
+
+  const processDeductionTransaction = async () => {
+    if(!deductionAmount || !deductionDescription) {
+      showToast('Please fill all fields', 'Error');
+      return;
+    }
+
+    try {
+      setProcessingDeduction(true);
+      const response = await axios.post(`${url}/api/transactions/add-transaction`, 
+        {
+          empId: selectedEmployee.empId,
+          amount: deductionAmount,
+          description: deductionDescription,
+          type: "DEDUCTION"
+        },
+        {
+          headers: {
+            authorization: `Bearer ${await getToken()}`,
+          }
+        }
+      );
+      const data = response.data;
+      if(data.message){
+        showToast(data.message, "Success");
+        fetchPaymentHistory();
+        setDeductionAmount(null);
+        setDeductionDescription(null);
+        setDeductionModalVisible(false);
+      }
+    } catch (err) {
+      showToast(err.response.data.error, "Error");
+      console.log(err);
+    } finally {
+      setProcessingDeduction(false);
+    }
   }
 
   const navigateToEmployeeDetails = (employeeId) => {
@@ -207,18 +259,6 @@ function AdminSalaryManagement() {
           <Text style={styles.employeeName}>{item?.name}</Text>
           <Text style={styles.employeePhone}>{item?.phone}</Text>
         </View>
-        {/* <View style={styles.statusContainer}>
-          <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20` }]}>
-            <MaterialCommunityIcons 
-              name={getStatusIcon(item.status)} 
-              size={14} 
-              color={getStatusColor(item.status)} 
-            />
-            <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-              {item.status}
-            </Text>
-          </View>
-        </View> */}
       </TouchableOpacity>
 
       {/* Salary Breakdown */}
@@ -237,7 +277,7 @@ function AdminSalaryManagement() {
         
        
           <View style={styles.salaryRow}>
-            <Text style={styles.salaryLabel}>Deductions ({item.unpaidLeaveDays} unpaid days)</Text>
+            <Text style={styles.salaryLabel}>Deductions </Text>
             <Text style={[styles.salaryAmount, { color: '#D0021B' }]}>
               - ₹{calculateMonthTotals(item.transactions).deduction}
             </Text>
@@ -275,17 +315,6 @@ function AdminSalaryManagement() {
           </TouchableOpacity>
         )}
         
-        {/* Past Months - Settle Overdue */}
-        {/* {item.status !== 'Paid' && !isCurrentMonth() && (
-          <TouchableOpacity
-            style={styles.settleButton}
-            onPress={() => handleSettleSalary(item)}
-          >
-            <MaterialCommunityIcons name="alert-circle" size={16} color="#fff" />
-            <Text style={styles.settleButtonText}>Settle Overdue</Text>
-          </TouchableOpacity>
-        )} */}
-        
         {/* Advance Payment - Only for Current Month */}
         {(item.transactions.filter(i=>i.payType === "SALARY").length === 0) && isCurrentMonth() && (
           <TouchableOpacity
@@ -293,7 +322,18 @@ function AdminSalaryManagement() {
             onPress={() => handleAdvancePayment(item)}
           >
             <MaterialCommunityIcons name="cash" size={16} color="#4A90E2" />
-            <Text style={styles.advanceButtonText}>Advance Payment</Text>
+            <Text style={styles.advanceButtonText}>Advance</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Deduction Button - Only for Current Month */}
+        {(item.transactions.filter(i=>i.payType === "SALARY").length === 0) && isCurrentMonth() && (
+          <TouchableOpacity
+            style={styles.deductionButton}
+            onPress={() => handleDeductionPayment(item)}
+          >
+            <MaterialCommunityIcons name="minus-circle" size={16} color="#F5A623" />
+            <Text style={styles.deductionButtonText}>Deduction</Text>
           </TouchableOpacity>
         )}
         
@@ -377,41 +417,6 @@ function AdminSalaryManagement() {
             <Feather name="chevron-right" size={24} color="white" />
           </TouchableOpacity>
         </View>
-
-        {/* <View style={styles.monthStats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{employees.length}</Text>
-            <Text style={styles.statLabel}>Employees</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: '#7ED321' }]}>
-              {employees.filter(e => e.status === 'Paid').length}
-            </Text>
-            <Text style={styles.statLabel}>Paid</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: '#F5A623' }]}>
-              {employees.filter(e => e.status === 'Pending').length}
-            </Text>
-            <Text style={styles.statLabel}>Pending</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: '#D0021B' }]}>
-              {employees.filter(e => e.status === 'Due').length}
-            </Text>
-            <Text style={styles.statLabel}>Due</Text>
-          </View>
-        </View> */}
-
-        {/* Alert for overdue salaries */}
-        {/* {employees.some(e => e.status === 'Due') && (
-          <View style={styles.overdueAlert}>
-            <MaterialCommunityIcons name="alert-circle" size={20} color="#D0021B" />
-            <Text style={styles.overdueAlertText}>
-              {employees.filter(e => e.status === 'Due').length} employee(s) have overdue salary payments
-            </Text>
-          </View>
-        )} */}
       </View>
 
       {/* Employee List */}
@@ -506,6 +511,114 @@ function AdminSalaryManagement() {
                     ) : (
                       <>
                         <MaterialCommunityIcons name="cash" size={16} color="#fff" />
+                        <Text style={styles.processButtonText}>Process</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Deduction Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={deductionModalVisible}
+        onRequestClose={() => setDeductionModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Deduction</Text>
+              <TouchableOpacity
+                onPress={() => setDeductionModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
+                <MaterialIcons name="close" size={24} color="#8A9BAE" />
+              </TouchableOpacity>
+            </View>
+            
+            {selectedEmployee && (
+              <View style={styles.modalBody}>
+                <Text style={styles.modalEmployeeName}>{selectedEmployee.name}</Text>
+                <Text style={styles.modalEmployeePhone}>{selectedEmployee.phone}</Text>
+                
+                <View style={styles.salaryInfoModal}>
+                  <Text style={styles.modalSalaryLabel}>Current Month Salary Calculation:</Text>
+                  <View style={styles.modalSalaryRow}>
+                    <Text style={styles.modalSalaryText}>Base Salary:</Text>
+                    <Text style={styles.modalSalaryAmount}>₹{selectedEmployee.baseSalary}</Text>
+                  </View>
+                  <View style={styles.modalSalaryRow}>
+                    <Text style={styles.modalSalaryText}>Overtime:</Text>
+                    <Text style={[styles.modalSalaryAmount, { color: '#7ED321' }]}>
+                      + ₹{calculateMonthTotals(selectedEmployee.transactions).overtime.toLocaleString()}
+                    </Text>
+                  </View>
+                  <View style={styles.modalSalaryRow}>
+                    <Text style={styles.modalSalaryText}>Current Deductions:</Text>
+                    <Text style={[styles.modalSalaryAmount, { color: '#D0021B' }]}>
+                      - ₹{calculateMonthTotals(selectedEmployee.transactions).deduction.toLocaleString()}
+                    </Text>
+                  </View>
+                  <View style={[styles.modalSalaryRow, styles.maxAdvanceRow]}>
+                    <Text style={styles.modalSalaryText}>Current Final Salary:</Text>
+                    <Text style={styles.modalSalaryAmount}>
+                      ₹{(selectedEmployee.baseSalary +
+                         calculateMonthTotals(selectedEmployee.transactions).overtime 
+                         - calculateMonthTotals(selectedEmployee.transactions).deduction
+                         -calculateMonthTotals(selectedEmployee.transactions).advance
+                         ).toLocaleString()}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Deduction Amount</Text>
+                  <TextInput
+                    style={styles.advanceInput}
+                    placeholder="Enter amount"
+                    placeholderTextColor="#8A9BAE"
+                    value={deductionAmount}
+                    onChangeText={setDeductionAmount}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Description</Text>
+                  <TextInput
+                    style={[styles.advanceInput, styles.descriptionInput]}
+                    placeholder="Enter deduction description"
+                    placeholderTextColor="#8A9BAE"
+                    value={deductionDescription}
+                    onChangeText={setDeductionDescription}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() => setDeductionModalVisible(false)}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.processButton, processingDeduction && styles.disabledButton]}
+                    onPress={processDeductionTransaction}
+                    disabled={processingDeduction}
+                  >
+                    {processingDeduction ? (
+                      <Text style={styles.processButtonText}>Processing...</Text>
+                    ) : (
+                      <>
+                        <MaterialCommunityIcons name="minus-circle" size={16} color="#fff" />
                         <Text style={styles.processButtonText}>Process</Text>
                       </>
                     )}
@@ -704,6 +817,7 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     gap: 8,
+    flexWrap: 'wrap',
   },
   settleButton: {
     flex: 1,
@@ -714,6 +828,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     gap: 6,
+    minWidth: '100%',
   },
   settleButtonText: {
     color: '#fff',
@@ -732,6 +847,21 @@ const styles = StyleSheet.create({
   },
   advanceButtonText: {
     color: '#4A90E2',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deductionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F5A62320',
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  deductionButtonText: {
+    color: '#F5A623',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -839,6 +969,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#2A3441',
+  },
+  descriptionInput: {
+    minHeight: 80,
+    paddingTop: 12,
   },
   modalActions: {
     flexDirection: 'row',
