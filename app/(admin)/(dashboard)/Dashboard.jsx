@@ -21,16 +21,14 @@ function Dashboard() {
   const [isAttendanceFinalized, setIsAttendanceFinalized] = useState(false);
   const {showToast} = useContextData();
   const {setOfficeData} = useOfficeContextData();
-  const [currentOffice,setCurrentOffice] = useState(null);  
+  const [currentOffice,setCurrentOffice] = useState('all');  
   const [showOfficeList,setShowOfficeList] = useState(false);
   const [isEmployeesAvailable,setIsEmployeesAvailable] = useState(false);
 
   // Modified dashboardDetails to accept officeId parameter
   const dashboardDetails = async (officeId) => {
     try {
-      let apiUrl = officeId
-        ? `${url}/api/attendances/getTodayAttendance/${officeId}`
-        : `${url}/api/attendances/getTodayAttendance`; // This won't work with :officeId route
+      let apiUrl =  `${url}/api/attendances/getTodayAttendance/${officeId}`
         
       const response = await axios.get(apiUrl, {
         headers: {
@@ -52,9 +50,8 @@ function Dashboard() {
   const handleFinalizeAttendance = async () => {
     try {
       setLoading(true);
-       let apiUrl = currentOffice
-        ? `${url}/api/attendances/finalizeAttendance/${currentOffice}`
-        : `${url}/api/attendances/finalizeAttendance`; // This won't work with :officeId route
+       let apiUrl =  `${url}/api/attendances/finalizeAttendance/${currentOffice}`
+
       const response = await axios.post(apiUrl, {}, {
         headers: {
           authorization: `Bearer ${await getToken()}`
@@ -62,7 +59,7 @@ function Dashboard() {
       });
       showToast(response.data.message || "Attendance finalized", "Success");
       await dashboardDetails(currentOffice); // refresh stats after finalization
-      await checkAttendanceFinalization(); // update finalization status
+      await checkAttendanceFinalization(currentOffice); // update finalization status
     } catch (error) {
       showToast(error?.response?.data?.error || "Failed to finalize attendance", "Error");
       console.error("Error finalizing attendance:", error);
@@ -73,9 +70,9 @@ function Dashboard() {
 
   const checkAttendanceFinalization = async (officeId) => {
     try {
-      let apiUrl = officeId
-        ? `${url}/api/attendances/checkBulkAttendanceStatus/${officeId}`
-        : `${url}/api/attendances/checkBulkAttendanceStatus`; // This won't work with :officeId route
+      console.log(officeId)
+      let apiUrl =  `${url}/api/attendances/checkBulkAttendanceStatus/${officeId}`
+
       const response = await axios.get(apiUrl, {
         headers: {
           authorization: `Bearer ${await getToken()}`
@@ -93,20 +90,25 @@ function Dashboard() {
     setCurrentOffice(officeId);
     setShowOfficeList(false);
     dashboardDetails(officeId); // Immediately fetch data for selected office
-      checkAttendanceFinalization(officeId);
+    if(officeId !== "all"){
+        checkAttendanceFinalization(officeId);
+    }
+
   }
 
 
   useEffect(() => {
-    dashboardDetails();
-    checkAttendanceFinalization();
+    dashboardDetails('all');
+    if(currentOffice !== "all"){
+        checkAttendanceFinalization(officeId);
+    }
   }, []);
   
   const stats = [
     { icon: 'user', iconSet: 'AntDesign', color: '#4A9EFF', label: 'Total Employees',field:"totalEmployees" },
-    { icon: 'user-check', iconSet: 'Feather', color: '#00D4AA', label: 'Present Today',field:"totalPresent" },
-    { icon: 'user-x', iconSet: 'Feather', color: '#FF6B6B', label: 'Absent Today',field:"totalAbsent" },
-    { icon: 'timer-outline', iconSet: 'Ionicons', color: '#FFB800', label: 'Late Arrivals',field:"totalLate" },
+    { icon: 'user-check', iconSet: 'Feather', color: '#00D4AA', label: 'Present Today',field:"totalPresent" ,status:"PRESENT"},
+    { icon: 'user-x', iconSet: 'Feather', color: '#FF6B6B', label: 'Absent Today',field:"totalAbsent",status:"ABSENT" },
+    { icon: 'timer-outline', iconSet: 'Ionicons', color: '#FFB800', label: 'Late Arrivals',field:"totalLate",status:"LATE" },
   ];
 
   const renderIcon = (iconName, iconSet, color, size = 28) => {
@@ -146,7 +148,7 @@ function Dashboard() {
           {/* office selector */}
           <View style={{marginBottom:20,width:'100%',gap:10}}>
                 <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',borderWidth:1,borderColor:'#2A3441',padding:10,borderRadius:8}}>
-                    <Text style={{color:'#FFFFFF',fontSize:18}}>{currentOffice ? data?.offices?.find(office => office.id === currentOffice)?.name : data?.office?.name}</Text>
+                    <Text style={{color:'#FFFFFF',fontSize:18}}>{currentOffice !== "all" ? data?.offices?.find(office => office.id === currentOffice)?.name : "All"}</Text>
                     <TouchableOpacity onPress={() => setShowOfficeList(!showOfficeList)}>
                       <AntDesign name={showOfficeList ? "up" : "down"} size={20} color="#4A9EFF" />
                     </TouchableOpacity>
@@ -154,6 +156,12 @@ function Dashboard() {
 
                 {
                   showOfficeList && <View>
+                    <TouchableOpacity 
+                        onPress={() => handleOfficeSelect('all')}
+                        style={{padding:10,backgroundColor: 'all' === currentOffice ? '#4A9EFF' : '#192633',borderRadius:8,marginTop:5}}
+                      > 
+                        <Text style={{color:'#FFFFFF',fontSize:16}}>All</Text>
+                      </TouchableOpacity>
                     {data?.offices?.map((office)=>(
                       <TouchableOpacity 
                         key={office.id}
@@ -169,6 +177,7 @@ function Dashboard() {
 
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Overview</Text>
+            {currentOffice !== "all" &&
             <TouchableOpacity 
               onPress={()=>{
                 if(!isAttendanceFinalized){
@@ -188,11 +197,21 @@ function Dashboard() {
               ) : (
                 <Text style={[styles.viewAllText,{color:'#fff'}]}>Finalize Attendance</Text>
               )}
-            </TouchableOpacity>
+            </TouchableOpacity> }
           </View>
           <View style={styles.overview}>
             {stats.map((stat, index) => (
-              <View key={index} style={styles.card}>
+             currentOffice === "all" ? ( stat.field !== "totalLate" &&  <TouchableOpacity
+               onPress={() =>{
+                if(stat.field !== "totalEmployees")
+                router.push({ pathname: '/AttendanceStatus', params: { id: currentOffice,status: stat.status} })
+               }
+              }
+              key={index} style={styles.card}>
+
+            {stat.field !== "totalEmployees" &&  
+              <AntDesign name="right" size={16}  style={{position:"absolute",top:5,right:10}}  color="#4A9EFF" />}
+
                 <View style={styles.cardContent}>
                   <View style={[styles.iconContainer, { backgroundColor: `${stat.color}20` }]}>
                     {renderIcon(stat.icon, stat.iconSet, stat.color)}
@@ -203,7 +222,29 @@ function Dashboard() {
                   </View>
                 </View>
                 <View style={[styles.cardAccent, { backgroundColor: stat.color }]} />
-              </View>
+              </TouchableOpacity> ) : (
+                 <TouchableOpacity
+                  onPress={() =>{
+                    if(stat.field !== "totalEmployees")
+                    router.push({ pathname: '/AttendanceStatus', params: { id: currentOffice,status: stat.status} })
+                  }
+                  }
+                  key={index} style={styles.card}>
+                    {stat.field !== "totalEmployees" &&  
+              <AntDesign name="right" size={16} style={{position:"absolute",top:5,right:10}} color="#4A9EFF" />}
+
+                <View style={styles.cardContent}>
+                  <View style={[styles.iconContainer, { backgroundColor: `${stat.color}20` }]}>
+                    {renderIcon(stat.icon, stat.iconSet, stat.color)}
+                  </View>
+                  <View style={styles.cardText}>
+                    <Text style={styles.cardCount}>{stat.field === "totalPresent" ? (data?.["totalLate"] + data?.["totalPresent"]) : data?.[stat.field]}</Text>
+                    <Text style={styles.cardLabel}>{stat.label}</Text>
+                  </View>
+                </View>
+                <View style={[styles.cardAccent, { backgroundColor: stat.color }]} />
+              </TouchableOpacity>
+              )
             ))}
           </View>
         </View>
@@ -227,7 +268,7 @@ function Dashboard() {
         </View>}
 
         {/* Leave Requests Section */}
-        <View style={styles.sectionContainer}>
+       {currentOffice !== "all" && <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Leave Requests</Text>
             <TouchableOpacity 
@@ -238,7 +279,7 @@ function Dashboard() {
               <AntDesign name="right" size={16} color="#4A9EFF" />
             </TouchableOpacity>
           </View>
-         {data?.pendingLeaves.length > 0 && <View style={styles.recentActivityContainer}>
+         {data?.pendingLeaves?.length > 0 && <View style={styles.recentActivityContainer}>
             {data?.pendingLeaves.map((request, index) => (
               <View key={index} style={styles.recentActivityItem}>
                 <View style={{gap:5, flex: 1}}>
@@ -251,7 +292,7 @@ function Dashboard() {
               </View>
             ))}
           </View>}
-        </View>
+        </View>}
 
         </ScrollView>
     </SafeAreaView>
@@ -329,6 +370,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#2A3441',
+    position:"relative"
   },
   cardContent: {
     padding: 16,
