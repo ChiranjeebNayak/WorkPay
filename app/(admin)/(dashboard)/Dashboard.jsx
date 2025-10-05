@@ -204,7 +204,7 @@ function Dashboard() {
              currentOffice === "all" ? ( stat.field !== "totalLate" &&  <TouchableOpacity
                onPress={() =>{
                 if(stat.field !== "totalEmployees")
-                router.push({ pathname: '/AttendanceStatus', params: { id: currentOffice,status: stat.status} })
+                router.push({ pathname: '/AttendanceStatus', params: { id: currentOffice,status: stat.status,officeName:data?.offices?.find(office => office?.id === currentOffice)?.name} })
                }
               }
               key={index} style={styles.card}>
@@ -226,7 +226,7 @@ function Dashboard() {
                  <TouchableOpacity
                   onPress={() =>{
                     if(stat.field !== "totalEmployees")
-                    router.push({ pathname: '/AttendanceStatus', params: { id: currentOffice,status: stat.status} })
+                    router.push({ pathname: '/AttendanceStatus', params: { id: currentOffice,status: stat.status,officeName:data?.offices?.find(office => office?.id === currentOffice)?.name} })
                   }
                   }
                   key={index} style={styles.card}>
@@ -238,7 +238,7 @@ function Dashboard() {
                     {renderIcon(stat.icon, stat.iconSet, stat.color)}
                   </View>
                   <View style={styles.cardText}>
-                    <Text style={styles.cardCount}>{stat.field === "totalPresent" ? (data?.["totalLate"] + data?.["totalPresent"]) : data?.[stat.field]}</Text>
+                    <Text style={styles.cardCount}>{stat.field === "totalPresent" ? (data?.["totalPresent"]) : data?.[stat.field]}</Text>
                     <Text style={styles.cardLabel}>{stat.label}</Text>
                   </View>
                 </View>

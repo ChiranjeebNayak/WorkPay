@@ -14,7 +14,7 @@ function AttendanceStatus() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState([]);
-    const {id,status} = useLocalSearchParams();
+    const {id,status,officeName} = useLocalSearchParams();
 
     console.log(id,status)
 
@@ -78,8 +78,12 @@ function AttendanceStatus() {
         >
           <AntDesign name="arrowleft" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{`${id === "all" ? `Total  Employees - ${status}`: `Employees - ${status}`}`}</Text>
+        <Text style={styles.headerTitle}>{`${id === "all" ? `Total  Employees`: `${officeName} Employees`}`}</Text>
         <View style={{ width: 40 }} />
+      </View>
+
+      <View style={{backgroundColor:getStatusBackground(status),marginTop:20,padding:4,borderRadius:5,width:"20%",alignSelf:"center",justifyContent:"center",alignItems:"center"}}>
+          <Text style={{color:getStatusColor(status),fontWeight:"bold"}}>{status}</Text>
       </View>
 
 
@@ -167,6 +171,8 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     color: '#FFFFFF',
+    maxWidth:"75%",
+    textAlign:"center"
   },
   searchContainer: {
     padding: 20,
