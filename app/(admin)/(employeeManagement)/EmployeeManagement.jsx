@@ -34,6 +34,7 @@ function EmployeeManagement() {
   const {showToast} = useContextData();
   const {officeData} = useOfficeContextData();
   const [showOfficeList, setShowOfficeList] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'ACTIVE', 'INACTIVE'
   
   // Date picker states
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -48,6 +49,8 @@ function EmployeeManagement() {
     overtimeRate: '',
     joinedDate: '',
     officeId: null,
+    accountNumber: '',
+    ifscCode: '',
   });
 
 
@@ -77,6 +80,8 @@ function EmployeeManagement() {
         overtimeRate: formData.overtimeRate,
         joinedDate: formData.joinedDate,
         officeId: formData.officeId,
+        accountNumber: formData.accountNumber,
+        ifscCode: formData.ifscCode,
         password: formData.phone
       }, {
         headers: {
@@ -90,7 +95,7 @@ function EmployeeManagement() {
       fetchEmployees();
     } catch (error) {
         showToast(error.response.data.error,"Error")
-      console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.joinedDate,formData.officeId);
+      console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.joinedDate,formData.officeId,formData.accountNumber,formData.ifscCode);
       console.error('Error adding employee:', error);
     }
   };
@@ -105,7 +110,9 @@ function EmployeeManagement() {
         baseSalary: formData.baseSalary,
         overtimeRate: formData.overtimeRate,
         joinedDate: formData.joinedDate,
-        officeId: formData.officeId
+        officeId: formData.officeId,
+        accountNumber: formData.accountNumber,
+        ifscCode: formData.ifscCode
       }, {
         headers: {
           authorization: `Bearer ${await getToken()}`,
@@ -118,7 +125,7 @@ function EmployeeManagement() {
       fetchEmployees();
     } catch (error) {
        showToast(error.response.data.error,"Error")
-      console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.joinedDate,formData.officeId);
+      console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.joinedDate,formData.officeId,formData.accountNumber,formData.ifscCode);
       console.error('Error editing employee:', error);
     }
   }
@@ -182,18 +189,25 @@ function EmployeeManagement() {
     fetchEmployees();
   }, []);
 
-  // Search functionality
+  // Search and filter functionality
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredEmployees(employees);
-    } else {
-      const filtered = employees.filter(employee =>
+    let filtered = employees;
+
+    // Apply status filter
+    if (statusFilter !== 'ALL') {
+      filtered = filtered.filter(employee => employee.status === statusFilter);
+    }
+
+    // Apply search query
+    if (searchQuery.trim() !== '') {
+      filtered = filtered.filter(employee =>
         employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         employee.phone.includes(searchQuery)
       );
-      setFilteredEmployees(filtered);
     }
-  }, [searchQuery, employees]);
+
+    setFilteredEmployees(filtered);
+  }, [searchQuery, employees, statusFilter]);
 
   const resetForm = () => {
     setFormData({
@@ -203,7 +217,9 @@ function EmployeeManagement() {
       baseSalary: '',
       overtimeRate: '',
       joinedDate: '',
-      officeId: null ,
+      officeId: null,
+      accountNumber: '',
+      ifscCode: '',
     });
     setEditingEmployee(null);
     setSelectedDate(new Date());
@@ -223,6 +239,8 @@ function EmployeeManagement() {
       overtimeRate: employee.overtimeRate.toString(),
       joinedDate: employee.joinedDate || '',
       officeId: employee.officeId,
+      accountNumber: employee.accountNumber || '',
+      ifscCode: employee.ifscCode || '',
     });
     
     // Set the selected date for the date picker
@@ -264,6 +282,22 @@ function EmployeeManagement() {
       showToast('Please select office','Error');
       return false;
     }
+    if (!formData.accountNumber.trim()) {
+      showToast('Please enter account number','Error');
+      return false;
+    }
+    if (!/^\d{9,18}$/.test(formData.accountNumber.trim())) {
+      showToast('Please enter valid account number (9-18 digits)','Error');
+      return false;
+    }
+    if (!formData.ifscCode.trim()) {
+      showToast('Please enter IFSC code','Error');
+      return false;
+    }
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifscCode.trim().toUpperCase())) {
+      showToast('Please enter valid IFSC code','Error');
+      return false;
+    }
     return true;
   };
 
@@ -278,9 +312,9 @@ function EmployeeManagement() {
             <Text style={styles.employeeName}>{item.name}</Text>
             <Text style={styles.employeePhone}>{item.phone}</Text>
           </View>
-          <View style={{marginLeft: 'auto',borderRadius: 4,backgroundColor: item.status === 'ACTIVE' ? '#4CAF50' : '#F44336',paddingHorizontal: 8,paddingVertical: 2,alignSelf: 'flex-start',}}>
+        {statusFilter ===  "ALL" &&  <View style={{marginLeft: 'auto',borderRadius: 4,backgroundColor: item.status === 'ACTIVE' ? '#4CAF50' : '#F44336',paddingHorizontal: 8,paddingVertical: 2,alignSelf: 'flex-start',}}>
                 <Text style={[styles.employeeRole,{color:"#ffffff",fontWeight:"bold"}]}>{item.status}</Text>
-          </View>
+          </View>}
         </View>
         
         <View style={styles.salaryInfo}>
@@ -309,14 +343,6 @@ function EmployeeManagement() {
           <Feather name="edit-2" size={16} color="#F5A623" />
           <Text style={[styles.actionText, { color: '#F5A623' }]}>Edit</Text>
         </TouchableOpacity>
-        
-        {/* <TouchableOpacity 
-          style={[styles.actionButton, styles.deleteButton]} 
-          onPress={() => showDeleteConfirmation(item)}
-        >
-          <Feather name="trash-2" size={16} color="#D0021B" />
-          <Text style={[styles.actionText, { color: '#D0021B' }]}>Delete</Text>
-        </TouchableOpacity> */}
 
           {/* Active Inactive button */}
           <TouchableOpacity
@@ -362,6 +388,38 @@ function EmployeeManagement() {
             onChangeText={setSearchQuery}
           />
         </View>
+      </View>
+
+      {/* Filter Buttons */}
+      <View style={styles.filterContainer}>
+        <TouchableOpacity 
+          style={[styles.filterButton, statusFilter === 'ALL' && styles.filterButtonActive]}
+          onPress={() => setStatusFilter('ALL')}
+        >
+          <Text style={[styles.filterButtonText, statusFilter === 'ALL' && styles.filterButtonTextActive]}>
+            All ({employees.length})
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.filterButton, statusFilter === 'ACTIVE' && styles.filterButtonActive]}
+          onPress={() => setStatusFilter('ACTIVE')}
+        >
+          <View style={[styles.statusDot, { backgroundColor: '#4CAF50' }]} />
+          <Text style={[styles.filterButtonText, statusFilter === 'ACTIVE' && styles.filterButtonTextActive]}>
+            Active ({employees.filter(e => e.status === 'ACTIVE').length})
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.filterButton, statusFilter === 'INACTIVE' && styles.filterButtonActive]}
+          onPress={() => setStatusFilter('INACTIVE')}
+        >
+          <View style={[styles.statusDot, { backgroundColor: '#F44336' }]} />
+          <Text style={[styles.filterButtonText, statusFilter === 'INACTIVE' && styles.filterButtonTextActive]}>
+            Inactive ({employees.filter(e => e.status === 'INACTIVE').length})
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Employee List */}
@@ -465,6 +523,32 @@ function EmployeeManagement() {
                     placeholder="250"
                     placeholderTextColor="#8A9BAE"
                     keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Account Number</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.accountNumber}
+                    onChangeText={(text) => setFormData({...formData, accountNumber: text})}
+                    placeholder="Enter account number"
+                    placeholderTextColor="#8A9BAE"
+                    keyboardType="numeric"
+                    maxLength={18}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>IFSC Code</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={formData.ifscCode}
+                    onChangeText={(text) => setFormData({...formData, ifscCode: text.toUpperCase()})}
+                    placeholder="Enter IFSC code"
+                    placeholderTextColor="#8A9BAE"
+                    autoCapitalize="characters"
+                    maxLength={11}
                   />
                 </View>
 
@@ -635,6 +719,43 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#FFFFFF',
     fontSize: 16,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#192633',
+    gap: 8,
+  },
+  filterButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#111a22',
+    borderWidth: 1,
+    borderColor: '#2A3441',
+    gap: 6,
+  },
+  filterButtonActive: {
+    backgroundColor: '#4A90E2',
+    borderColor: '#4A90E2',
+  },
+  filterButtonText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#8A9BAE',
+  },
+  filterButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   listContainer: {
     flex: 1,

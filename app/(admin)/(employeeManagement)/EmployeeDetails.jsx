@@ -349,7 +349,10 @@ useEffect(()=>{
             <Text style={styles.salaryText}>Base: ₹{employee.baseSalary.toLocaleString()}</Text>
             <Text style={styles.overtimeText}>OT: ₹{employee.overtimeRate}/hr</Text>
           </View>
+            <Text style={{fontWeight:"bold",color:"white"}}>Account No: {employee.accountNumber}</Text>
+              <Text style={{fontWeight:"bold",color:"white"}}>Account No: {employee.ifscCode}</Text>
         </View>
+      
       </View>
 
       {/* Tab Navigation */}
@@ -620,6 +623,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4A90E2',
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf:"flex-start"
   },
   avatarText: {
     fontSize: 24,

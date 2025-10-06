@@ -21,8 +21,27 @@ function Profile() {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const {employeeData,showToast} = useContextData();
+  const {employeeData,showToast,setEmployeeData} = useContextData();
 
+  // Bank details state
+  const [showBankEditSection, setShowBankEditSection] = useState(false);
+  const [accountNumber, setAccountNumber] = useState(employeeData?.accountNumber); // Dummy data
+  const [ifscCode, setIfscCode] = useState(employeeData.ifscCode); // Dummy data
+
+  const fetchDashboardDetails = async () => {
+    try {
+      const response = await axios.get(`${url}/api/employees/dashboard`, {
+        headers: {
+          authorization: `Bearer ${await getToken()}`
+        }
+      });
+      const data = response.data;
+      setEmployeeData(data.employeeDetails);
+    } catch (error) {
+      showToast(error.response.data.error,'Error');
+      console.error('Error fetching dashboard details:', error);
+    }
+  }
 
   const handlePasswordUpdate = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
@@ -77,6 +96,50 @@ function Profile() {
     setOldPassword("");
     setNewPassword("");
     setConfirmPassword("");
+  };
+
+  const handleBankDetailsUpdate = async () => {
+    if (!accountNumber || !ifscCode) {
+      showToast("Please fill in all bank details fields", "Warning");
+      return;
+    }
+
+    if (accountNumber.length < 9 || accountNumber.length > 18) {
+      showToast("Account number must be between 9 and 18 digits", "Warning");
+      return;
+    }
+
+    if (ifscCode.length !== 11) {
+      showToast("IFSC code must be 11 characters", "Warning");
+      return;
+    }
+
+   try{
+        const response = await axios.put(`${url}/api/employees/update-bank`,{
+            accountNumber:accountNumber,
+            ifscCode:ifscCode
+        },
+       {
+               headers: {
+                 authorization: `Bearer ${await getToken()}`
+               }
+             }
+      )
+      if(response.data.message){
+    showToast("Bank details updated successfully", "Success");
+    setShowBankEditSection(false);
+    fetchDashboardDetails();
+  }
+    }catch(error){
+      showToast(error.response.data.error,"Error")
+       console.error('Error Updating Password:', error);
+    }
+
+
+  };
+
+  const cancelBankDetailsUpdate = () => {
+    setShowBankEditSection(false);
   };
 
   return (
@@ -172,6 +235,95 @@ function Profile() {
               </View>
             </View>
           </View>
+        </View>
+
+        {/* Bank Details Card */}
+        <View style={styles.infoCard}>
+          <View style={styles.cardHeader}>
+            <MaterialCommunityIcons name="bank" size={24} color="#66ff99" />
+            <Text style={styles.cardTitle}>Bank Details</Text>
+          </View>
+          
+          {!showBankEditSection ? (
+            <View style={styles.detailsList}>
+              <View style={styles.detailRow}>
+                <View style={styles.detailIcon}>
+                  <MaterialCommunityIcons name="credit-card-outline" size={18} color="#66ff99" />
+                </View>
+                <View style={styles.detailContent}>
+                  <Text style={styles.detailLabel}>Account Number</Text>
+                  <Text style={styles.detailValue}>{employeeData.accountNumber}</Text>
+                </View>
+              </View>
+
+              <View style={styles.separator} />
+
+              <View style={styles.detailRow}>
+                <View style={styles.detailIcon}>
+                  <MaterialCommunityIcons name="bank-outline" size={18} color="#66ff99" />
+                </View>
+                <View style={styles.detailContent}>
+                  <Text style={styles.detailLabel}>IFSC Code</Text>
+                  <Text style={styles.detailValue}>{employeeData.ifscCode}</Text>
+                </View>
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => setShowBankEditSection(true)}
+                >
+                  <Feather name="edit-2" size={16} color="#4da6ff" />
+                  <Text style={styles.editButtonText}>Edit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.passwordForm}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Account Number</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.input}
+                    value={accountNumber}
+                    onChangeText={setAccountNumber}
+                    placeholder="Enter account number"
+                    placeholderTextColor="#666"
+                    keyboardType="numeric"
+                    maxLength={18}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>IFSC Code</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.input}
+                    value={ifscCode}
+                    onChangeText={(text) => setIfscCode(text.toUpperCase())}
+                    placeholder="Enter IFSC code"
+                    placeholderTextColor="#666"
+                    autoCapitalize="characters"
+                    maxLength={11}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity 
+                  style={styles.cancelButton}
+                  onPress={cancelBankDetailsUpdate}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.updateButton}
+                  onPress={handleBankDetailsUpdate}
+                >
+                  <Text style={styles.updateButtonText}>Update</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Security Card */}
@@ -500,7 +652,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4da6ff',
     paddingVertical: 14,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center"
   },
   updateButtonText: {
     color: '#fff',

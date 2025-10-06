@@ -132,7 +132,7 @@ function Home() {
       console.log(`Distance from office: ${distance.toFixed(2)} meters`);
 
       // Check if user is within allowed range
-      const MAX_DISTANCE = 100; // meters
+      const MAX_DISTANCE = officeLocation?.range; // meters
       const MIN_DISTANCE = 0;   // meters
 
       if (distance < MIN_DISTANCE || distance > MAX_DISTANCE) {
@@ -181,7 +181,7 @@ function Home() {
       {/* Header */}
       <View style={styles.headerContainer}>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Welcome back, {dashboardDetails?.employeeDetails?.name}</Text>
+          <Text style={styles.headerTitle}>Welcome back, {dashboardDetails?.employeeDetails?.name} </Text>
           <View style={styles.employeeIdBadge}>
             <Text style={styles.employeeIdText}>ID: {dashboardDetails?.employeeDetails?.id}</Text>
           </View>
@@ -350,6 +350,7 @@ const styles = StyleSheet.create({
   },
   headerTitleContainer: {
     gap: 8,
+    maxWidth:"80%",
   },
   headerTitle: {
     fontSize: 24,
@@ -383,6 +384,7 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     position: 'relative',
+    alignSelf:"flex-start"
   },
   menuButton: {
     width: 44,
