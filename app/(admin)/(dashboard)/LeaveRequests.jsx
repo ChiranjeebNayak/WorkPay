@@ -4,11 +4,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import uuid from 'react-native-uuid';
 import { url } from '../../../constants/EnvValue';
 import { useContextData } from '../../../context/EmployeeContext';
 import { getToken } from '../../../services/ApiService';
 import { formatDay } from "../../../utils/TimeUtils";
-
 
 function LeaveRequests() {
   const router = useRouter();
@@ -20,9 +20,11 @@ function LeaveRequests() {
   const fetchLeaveRequest = async ()=>{
     try{
          let apiUrl = id ? `${url}/api/leaves/summary/${id}` : `${url}/api/leaves/summary`;
+         const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
        const response = await axios.get(apiUrl, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
       const data = response.data;
@@ -36,13 +38,15 @@ function LeaveRequests() {
 
     const handleAcceptReject = async (id,type)=>{
     try{
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
        const response = await axios.post(`${url}/api/leaves/update-status`,
         {
           leaveId:id,
           status:type
         }, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
       const data = response.data;

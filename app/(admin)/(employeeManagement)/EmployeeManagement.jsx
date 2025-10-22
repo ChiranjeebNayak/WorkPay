@@ -17,6 +17,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import uuid from 'react-native-uuid';
 import { url } from '../../../constants/EnvValue';
 import { useContextData } from "../../../context/EmployeeContext";
 import { useOfficeContextData } from '../../../context/OfficeContext';
@@ -56,9 +57,11 @@ function EmployeeManagement() {
 
   const fetchEmployees = async () => {
     try {
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/employees/getAll`,{
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
       setEmployees(response.data);
@@ -72,6 +75,7 @@ function EmployeeManagement() {
   const addEmployee = async () => {
     if (!validateForm()) return;
     try {
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.post(`${url}/api/employees/add`, {
         name: formData.name,
         phone: formData.phone,
@@ -86,7 +90,8 @@ function EmployeeManagement() {
       }, {
         headers: {
           authorization: `Bearer ${await getToken()}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-transaction-id': txnId
         }
       });
       console.log('Employee added:', response.data.data);
@@ -103,6 +108,7 @@ function EmployeeManagement() {
   const editEmployee = async () => {
     if (!validateForm()) return;
     try {
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.put(`${url}/api/employees/update/${editingEmployee.id}`, {
         name: formData.name,
         phone: formData.phone,
@@ -116,7 +122,8 @@ function EmployeeManagement() {
       }, {
         headers: {
           authorization: `Bearer ${await getToken()}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-transaction-id': txnId
         }
       });
       console.log('Employee edited:', response.data.data);
@@ -139,12 +146,15 @@ function EmployeeManagement() {
     if (!employeeToStatusUpdate) return;
     
     try {
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.put(`${url}/api/employees/update-status/${employeeToStatusUpdate.id}`,
       {
         status: employeeToStatusUpdate.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
       }, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'Content-Type': 'application/json',
+          'x-transaction-id': txnId
         }
       });
       showToast(response.data.message,"Success")

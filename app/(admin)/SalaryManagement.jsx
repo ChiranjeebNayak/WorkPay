@@ -15,6 +15,7 @@ import {
   View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import uuid from 'react-native-uuid'
 import { url } from '../../constants/EnvValue'
 import { useContextData } from "../../context/EmployeeContext"
 import { getToken } from "../../services/ApiService"
@@ -44,9 +45,11 @@ function AdminSalaryManagement() {
    const fetchPaymentHistory = async () => {
     try {
       setLoading(true);
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/transactions/monthly-transactions?year=${selectedYear}&month=${selectedMonth}`, {
         headers: {
           authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
       const data = response.data;
@@ -116,6 +119,7 @@ function AdminSalaryManagement() {
   const handleSettleSalary = async (employee) => {
     setSelectedEmployee(employee);
       try {
+        const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.post(`${url}/api/transactions/add-transaction`, 
         {
           empId:employee.empId,
@@ -135,6 +139,7 @@ function AdminSalaryManagement() {
         {
         headers: {
           authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
       const data = response.data;
@@ -175,6 +180,7 @@ function AdminSalaryManagement() {
       }
       try {
       setProcessingAdvance(true);
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.post(`${url}/api/transactions/add-transaction`, 
         {
           empId:selectedEmployee.empId,
@@ -186,6 +192,7 @@ function AdminSalaryManagement() {
         {
         headers: {
           authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
       const data = response.data;
@@ -212,6 +219,7 @@ function AdminSalaryManagement() {
 
     try {
       setProcessingDeduction(true);
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.post(`${url}/api/transactions/add-transaction`, 
         {
           empId: selectedEmployee.empId,
@@ -222,6 +230,7 @@ function AdminSalaryManagement() {
         {
           headers: {
             authorization: `Bearer ${await getToken()}`,
+            'x-transaction-id': txnId
           }
         }
       );

@@ -6,6 +6,7 @@ import { useRouter } from "expo-router"
 import { useEffect, useState } from "react"
 import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import uuid from 'react-native-uuid'
 import { url } from '../../../constants/EnvValue'
 import { useContextData } from "../../../context/EmployeeContext"
 import { getToken, removeToken } from '../../../services/ApiService'
@@ -80,9 +81,11 @@ function Home() {
 
   const fetchDashboardDetails = async () => {
     try {
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/employees/dashboard`, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
       const data = response.data;
@@ -140,13 +143,15 @@ function Home() {
         return;
       }
 
+       const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       // Proceed with attendance action if location is verified
       const response = await axios.post(`${url}/api/attendances/mark`, {
         type: action,
         location: userLocation // Send current location to backend
       },{
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
       

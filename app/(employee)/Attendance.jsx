@@ -3,6 +3,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import uuid from 'react-native-uuid';
 import DataCard from "../../components/Attendance/DataCard";
 import { url } from "../../constants/EnvValue";
 import { useContextData } from "../../context/EmployeeContext";
@@ -63,10 +64,12 @@ const {showToast} = useContextData()
 
   const fetchAttendanceData = async () => {
     try{
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/attendances/getAttendance?month=${currentMonth}&year=${currentYear}`
         ,{
           headers: {
             Authorization: `Bearer ${await getToken()}`,
+            'x-transaction-id': txnId,
         }
       }
       );

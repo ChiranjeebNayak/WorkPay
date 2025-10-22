@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import uuid from 'react-native-uuid';
 import { url } from '../../../constants/EnvValue';
 import { useContextData } from "../../../context/EmployeeContext";
 import { useOfficeContextData } from "../../../context/OfficeContext";
@@ -35,9 +36,11 @@ function OfficeSettings() {
 
   const fetchOfficeDetails = async () => {
     try {
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/offices/`, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
 
@@ -133,7 +136,7 @@ const addOffice = async () => {
       }
 
    
-
+       const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.post(`${url}/api/offices/create`, {
         checkin: checkinUTC,
         checkout: checkoutUTC,
@@ -144,7 +147,8 @@ const addOffice = async () => {
         range:formData.range
       }, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
       if(response.data.message){
@@ -210,7 +214,7 @@ const updateOfficeSettings = async () => {
         return;
       }
 
-
+    const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
     const response = await axios.put(`${url}/api/offices/update/${formData.id}`, {
       checkin: checkinUTC,
       checkout: checkoutUTC,
@@ -221,7 +225,8 @@ const updateOfficeSettings = async () => {
       range:formData.range
     }, {
       headers: {
-        authorization: `Bearer ${await getToken()}`
+        authorization: `Bearer ${await getToken()}`,
+        'x-transaction-id': txnId
       }
     });
 
@@ -241,9 +246,11 @@ const updateOfficeSettings = async () => {
 
 const deleteOffice = async (officeId) => {
   try {
+    const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
     const response = await axios.delete(`${url}/api/offices/delete/${officeId}`, {
       headers: {
-        authorization: `Bearer ${await getToken()}`
+        authorization: `Bearer ${await getToken()}`,
+        'x-transaction-id': txnId
       }
     });
     if(response.data.message){

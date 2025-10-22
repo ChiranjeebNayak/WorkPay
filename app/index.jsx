@@ -15,6 +15,7 @@ import {
   TouchableWithoutFeedback,
   View
 } from 'react-native';
+import uuid from 'react-native-uuid';
 import { url } from "../constants/EnvValue";
 import { useContextData } from "../context/EmployeeContext";
 import { storeToken } from '../services/ApiService';
@@ -58,6 +59,7 @@ function index() {
 
     setIsLoading(true);
     try {
+       const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.post(`${url}/api/employees/login`, {
         phone: employeeLogin.phone,
         password: employeeLogin.password,
@@ -65,6 +67,7 @@ function index() {
       {
         headers: {
           'Content-Type': 'application/json',
+           'x-transaction-id': txnId, 
         }
       });
 
@@ -106,9 +109,16 @@ function index() {
 
     setIsLoading(true);
     try {
+       const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.post(`${url}/api/admins/login`, {
         email: adminLogin.email,
         password: adminLogin.password,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-transaction-id': txnId,
+        }
       });
       
       if (response.data.token) {

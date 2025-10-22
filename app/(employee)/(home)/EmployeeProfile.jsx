@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import uuid from 'react-native-uuid';
 import { url } from "../../../constants/EnvValue";
 import { useContextData } from "../../../context/EmployeeContext";
 import { getToken } from "../../../services/ApiService";
@@ -30,9 +31,11 @@ function Profile() {
 
   const fetchDashboardDetails = async () => {
     try {
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/employees/dashboard`, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
       const data = response.data;
@@ -65,13 +68,15 @@ function Profile() {
     }
 
     try{
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
         const response = await axios.post(`${url}/api/employees/update-password`,{
           currentPassword:oldPassword,
           newPassword:newPassword
         },
        {
                headers: {
-                 authorization: `Bearer ${await getToken()}`
+                 authorization: `Bearer ${await getToken()}`,
+                 'x-transaction-id': txnId
                }
              }
       )
@@ -115,13 +120,15 @@ function Profile() {
     }
 
    try{
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
         const response = await axios.put(`${url}/api/employees/update-bank`,{
             accountNumber:accountNumber,
             ifscCode:ifscCode
         },
        {
                headers: {
-                 authorization: `Bearer ${await getToken()}`
+                 authorization: `Bearer ${await getToken()}`,
+                 'x-transaction-id': txnId
                }
              }
       )

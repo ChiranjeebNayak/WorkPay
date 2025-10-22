@@ -14,6 +14,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import uuid from 'react-native-uuid';
 import { url } from '../../constants/EnvValue';
 import { useContextData } from '../../context/EmployeeContext';
 import { getToken } from '../../services/ApiService';
@@ -147,9 +148,11 @@ const formatDateForComparison = (date) => {
   const fetchHolidays = async () => {
     try {
       setIsLoadingHolidays(true);
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/holidays/getAll`, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId,
         }
       });
       
@@ -184,9 +187,11 @@ const formatDateForComparison = (date) => {
 
   const fetchLeavesHistory = async () => {
     try {
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/leaves/employee-leaves?year=${currentYear}`, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId,
         }
       });
       setLeaveHistory(response.data.leaves);
@@ -238,6 +243,7 @@ const formatDateForComparison = (date) => {
     }
     
     try {
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.post(`${url}/api/leaves/apply`, {
         reason: description,
         startDate: startDate,
@@ -245,6 +251,7 @@ const formatDateForComparison = (date) => {
       }, {
         headers: {
           authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId,
         }
       });
       

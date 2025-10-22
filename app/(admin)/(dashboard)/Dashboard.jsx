@@ -7,12 +7,12 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import uuid from 'react-native-uuid';
 import { url } from '../../../constants/EnvValue';
 import { useContextData } from '../../../context/EmployeeContext';
 import { useOfficeContextData } from '../../../context/OfficeContext';
 import { getToken, removeToken } from '../../../services/ApiService';
 import { formatDay } from "../../../utils/TimeUtils";
-
 
 function Dashboard() {
   const router = useRouter();
@@ -29,11 +29,12 @@ function Dashboard() {
   const dashboardDetails = async (officeId) => {
     try {
       let apiUrl =  `${url}/api/attendances/getTodayAttendance/${officeId}`
-        
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(apiUrl, {
         headers: {
           authorization: `Bearer ${await getToken()}`,
           'Content-Type': 'application/json',
+          'x-transaction-id': txnId
         }
       });
       const data = response.data;
@@ -51,10 +52,12 @@ function Dashboard() {
     try {
       setLoading(true);
        let apiUrl =  `${url}/api/attendances/finalizeAttendance/${currentOffice}`
-
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.post(apiUrl, {}, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'Content-Type': 'application/json',
+          'x-transaction-id': txnId
         }
       });
       showToast(response.data.message || "Attendance finalized", "Success");
@@ -72,10 +75,12 @@ function Dashboard() {
     try {
       console.log(officeId)
       let apiUrl =  `${url}/api/attendances/checkBulkAttendanceStatus/${officeId}`
-
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(apiUrl, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'Content-Type': 'application/json',
+          'x-transaction-id': txnId
         }
       });
       setIsAttendanceFinalized(response.data.isBulkMarkingCompleted);

@@ -13,6 +13,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import uuid from 'react-native-uuid';
 import { url } from '../../../constants/EnvValue';
 import { useContextData } from '../../../context/EmployeeContext';
 import { getToken } from '../../../services/ApiService';
@@ -76,9 +77,11 @@ function EmployeeDetails() {
 
     const fetchEmployeeDetails = async () => {
     try {
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/employees/get/${id}`, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
       setEmployee(response.data.data);
@@ -89,10 +92,12 @@ function EmployeeDetails() {
 
     const fetchAttendanceData = async () => {
     try{
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/attendances/getEmployeeAttendance?empId=${id}&month=${currentMonth}&year=${currentYear}`
         ,{
           headers: {
             Authorization: `Bearer ${await getToken()}`,
+            'x-transaction-id': txnId
         }
       }
       );
@@ -115,10 +120,12 @@ function EmployeeDetails() {
 
 const fetchLeavesData = async ()=>{
   try{
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/leaves/get/employee-leaves?empId=${id}&year=${selectedLeaveYear}`
         ,{
           headers: {
             Authorization: `Bearer ${await getToken()}`,
+            'x-transaction-id': txnId
         }
       }
       );
@@ -136,10 +143,12 @@ useEffect(()=>{
 
 const fetchPaymentsData = async ()=>{
     try{
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/transactions/get/monthly-transactions?empId=${id}&year=${selectedPaymentYear}`
         ,{
           headers: {
             Authorization: `Bearer ${await getToken()}`,
+            'x-transaction-id': txnId
         }
       }
       );

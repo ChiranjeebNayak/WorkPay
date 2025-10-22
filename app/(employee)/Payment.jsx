@@ -3,10 +3,10 @@ import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import uuid from 'react-native-uuid'
 import { url } from '../../constants/EnvValue'
 import { useContextData } from '../../context/EmployeeContext'
 import { getToken } from '../../services/ApiService'
-
 
 const months = [
   "January", "February", "March", "April", "May", "June",
@@ -48,9 +48,11 @@ function Payment() {
   const fetchPaymentHistory = async () => {
     try {
       setLoading(true);
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/transactions/employee?year=${selectedYear}`, {
         headers: {
           authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId,
         }
       });
       const data = response.data;

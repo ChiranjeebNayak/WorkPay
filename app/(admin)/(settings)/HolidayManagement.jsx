@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import uuid from 'react-native-uuid';
 import { url } from "../../../constants/EnvValue";
 import { useContextData } from "../../../context/EmployeeContext";
 import { getToken } from "../../../services/ApiService";
@@ -35,9 +36,11 @@ function HolidayManagement() {
   const fetchHolidays = async () => {
     try {
       setIsLoading(true);
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(`${url}/api/holidays/getAll`, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
       
@@ -69,12 +72,14 @@ function HolidayManagement() {
 
     try {
       setIsLoading(true);
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.post(`${url}/api/holidays/add`, {
         description: holidayName,
         date: holidayDate.toISOString()
       }, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
 
@@ -103,9 +108,11 @@ function HolidayManagement() {
 
     try {
       setIsLoading(true);
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       await axios.delete(`${url}/api/holidays/delete/${holidayToDelete.id}`, {
         headers: {
-          authorization: `Bearer ${await getToken()}`
+          authorization: `Bearer ${await getToken()}`,
+          'x-transaction-id': txnId
         }
       });
 

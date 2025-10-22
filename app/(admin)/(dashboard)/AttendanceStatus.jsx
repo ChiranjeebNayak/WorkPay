@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import uuid from 'react-native-uuid';
 import { url } from '../../../constants/EnvValue';
 import { getToken } from '../../../services/ApiService';
 
@@ -21,11 +22,12 @@ function AttendanceStatus() {
     const fetchEmployeesData = async ()=>{
           try {
        let apiUrl =  `${url}/api/attendances/getEmployeesByStatus/${id}/${status}`
-
+      const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       const response = await axios.get(apiUrl, {
          headers: {
           authorization: `Bearer ${await getToken()}`,
           'Content-Type': 'application/json',
+          'x-transaction-id': txnId
         }
       });
       console.log(response.data.employees);
