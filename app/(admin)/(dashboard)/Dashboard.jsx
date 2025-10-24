@@ -37,6 +37,10 @@ function Dashboard() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+          showToast(response.data.message,'Error');
+          return;
+      }
       const data = response.data;
       setData(data);
       setOfficeData(data.offices);
@@ -60,6 +64,10 @@ function Dashboard() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+          showToast(response.data.message,'Error');
+          return;
+      }
       showToast(response.data.message || "Attendance finalized", "Success");
       await dashboardDetails(currentOffice); // refresh stats after finalization
       await checkAttendanceFinalization(currentOffice); // update finalization status
@@ -83,6 +91,10 @@ function Dashboard() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+          showToast(response.data.message,'Error');
+          return;
+      }
       setIsAttendanceFinalized(response.data.isBulkMarkingCompleted);
       setIsEmployeesAvailable(response.data.totalEmployees > 0);
     } catch (error) {

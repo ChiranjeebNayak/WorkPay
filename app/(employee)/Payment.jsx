@@ -55,6 +55,10 @@ function Payment() {
           'x-transaction-id': txnId,
         }
       });
+      if(response.data.error){
+        showToast(response.data.message, "Error");
+        return;
+      }
       const data = response.data;
       setPaymentData(data);
     } catch (err) {

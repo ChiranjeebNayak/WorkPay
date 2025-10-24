@@ -10,9 +10,6 @@ import { url } from "../../../constants/EnvValue";
 import { useContextData } from "../../../context/EmployeeContext";
 import { getToken } from "../../../services/ApiService";
 
-// Dummy employee data
-
-
 function Profile() {
   const router = useRouter();
   const [showPasswordSection, setShowPasswordSection] = useState(false);
@@ -26,8 +23,8 @@ function Profile() {
 
   // Bank details state
   const [showBankEditSection, setShowBankEditSection] = useState(false);
-  const [accountNumber, setAccountNumber] = useState(employeeData?.accountNumber); // Dummy data
-  const [ifscCode, setIfscCode] = useState(employeeData.ifscCode); // Dummy data
+  const [accountNumber, setAccountNumber] = useState(employeeData?.accountNumber);
+  const [ifscCode, setIfscCode] = useState(employeeData.ifscCode);
 
   const fetchDashboardDetails = async () => {
     try {
@@ -38,6 +35,10 @@ function Profile() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+        showToast( response.data.error,'Error');
+        return;
+      }
       const data = response.data;
       setEmployeeData(data.employeeDetails);
     } catch (error) {
@@ -80,7 +81,11 @@ function Profile() {
                }
              }
       )
-      if(response.data.message){
+      if(response.data.error){
+        showToast(response.data.message,"Error")
+        return;
+      }
+      if(!response.data.error && response.data.message){
         showToast(response.data.message,"Success")
        setShowPasswordSection(false);
           setOldPassword("");
@@ -91,9 +96,6 @@ function Profile() {
       showToast(error.response.data.error,"Error")
        console.error('Error Updating Password:', error);
     }
-
-    // Here you would typically validate old password and update
-   
   };
 
   const cancelPasswordUpdate = () => {
@@ -132,6 +134,11 @@ function Profile() {
                }
              }
       )
+      if(response.data.error){
+        showToast(response.data.error,"Error")
+        return;
+      }
+
       if(response.data.message){
     showToast("Bank details updated successfully", "Success");
     setShowBankEditSection(false);
@@ -141,13 +148,13 @@ function Profile() {
       showToast(error.response.data.error,"Error")
        console.error('Error Updating Password:', error);
     }
-
-
   };
 
   const cancelBankDetailsUpdate = () => {
     setShowBankEditSection(false);
   };
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -207,6 +214,38 @@ function Profile() {
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Phone Number</Text>
                 <Text style={styles.detailValue}>{employeeData.phone}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Office Details Card */}
+        <View style={styles.infoCard}>
+          <View style={styles.cardHeader}>
+            <MaterialCommunityIcons name="office-building" size={24} color="#b366ff" />
+            <Text style={styles.cardTitle}>Office Information</Text>
+          </View>
+          
+          <View style={styles.detailsList}>
+            <View style={styles.detailRow}>
+              <View style={[styles.detailIcon, { backgroundColor: 'rgba(179, 102, 255, 0.1)' }]}>
+                <MaterialCommunityIcons name="office-building-marker" size={18} color="#b366ff" />
+              </View>
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Office Name</Text>
+                <Text style={styles.detailValue}>{employeeData.officeName}</Text>
+              </View>
+            </View>
+
+            <View style={styles.separator} />
+
+            <View style={styles.detailRow}>
+              <View style={[styles.detailIcon, { backgroundColor: 'rgba(179, 102, 255, 0.1)' }]}>
+                <MaterialCommunityIcons name="map-marker" size={18} color="#b366ff" />
+              </View>
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Location</Text>
+                <Text style={styles.detailValue}>{employeeData.location}</Text>
               </View>
             </View>
           </View>

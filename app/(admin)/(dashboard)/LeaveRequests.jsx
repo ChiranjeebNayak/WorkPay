@@ -27,6 +27,10 @@ function LeaveRequests() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+          showToast(response.data.message,'Error');
+          return;
+      }
       const data = response.data;
       setData(data);
       console.log(data.office)
@@ -49,6 +53,10 @@ function LeaveRequests() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+          showToast(response.data.message,'Error');
+          return;
+      }
       const data = response.data;
       if(data.message){
         showToast(data.message,"Success")

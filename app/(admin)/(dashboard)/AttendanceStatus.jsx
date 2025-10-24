@@ -30,6 +30,10 @@ function AttendanceStatus() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+          showToast(response.data.message,'Error');
+          return;
+      }
       console.log(response.data.employees);
       setEmployees(response.data.employees)
     } catch (error) {

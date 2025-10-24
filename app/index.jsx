@@ -71,6 +71,11 @@ function index() {
         }
       });
 
+      if (response.data.error) {
+        showToast(response.data.error, "Error");
+        return;
+      }
+
       if (response.data.token) {
         await storeToken(response.data.token);
          showToast(response?.data?.message,"Success")
@@ -120,6 +125,11 @@ function index() {
           'x-transaction-id': txnId,
         }
       });
+
+      if (response.data.error) {
+        showToast(response.data.error, "Error");
+        return;
+      }
       
       if (response.data.token) {
         await storeToken(response.data.token);

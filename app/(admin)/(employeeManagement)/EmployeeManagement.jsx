@@ -19,7 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import uuid from 'react-native-uuid';
 import { url } from '../../../constants/EnvValue';
-import { useContextData } from "../../../context/EmployeeContext";
+import { ModalToast, useContextData } from "../../../context/EmployeeContext";
 import { useOfficeContextData } from '../../../context/OfficeContext';
 import { getToken } from '../../../services/ApiService';
 
@@ -64,6 +64,10 @@ function EmployeeManagement() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+        showToast(response.data.error,'Error');
+        return;
+      }
       setEmployees(response.data);
       setFilteredEmployees(response.data);
     } catch (error) {
@@ -94,6 +98,10 @@ function EmployeeManagement() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+        showToast(response.data.error,'Error');
+        return;
+      }
       console.log('Employee added:', response.data.data);
       showToast(response.data.message,"Success")
       setModalVisible(false);
@@ -126,12 +134,16 @@ function EmployeeManagement() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+        showToast(response.data.error,"Error",true)
+      }else{
       console.log('Employee edited:', response.data.data);
-       showToast(response.data.message,"Success")
+       showToast(response.data.message,"Success",false)
       setModalVisible(false);
       fetchEmployees();
+      } 
     } catch (error) {
-       showToast(error.response.data.error,"Error")
+       showToast(error.response.error,"Error")
       console.log("Data",formData.name,formData.phone,formData.email,formData.baseSalary,formData.overtimeRate,formData.joinedDate,formData.officeId,formData.accountNumber,formData.ifscCode);
       console.error('Error editing employee:', error);
     }
@@ -157,6 +169,10 @@ function EmployeeManagement() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+        showToast(response.data.message,"Error")
+        return;
+      }
       showToast(response.data.message,"Success")
       setStatusModalVisible(false);
       setEmployeeToStatusUpdate(null);
@@ -264,48 +280,48 @@ function EmployeeManagement() {
 
   const validateForm = () => {
     if (!formData.name.trim()) {
-      showToast('Please enter employee name','Error');
+      showToast('Please enter employee name','Error',true);
       return false;
     }
     if (!formData.phone.trim()) {
-      showToast( 'Please enter phone number','Error');
+      showToast( 'Please enter phone number','Error',true);
       return false;
     }
 
     if (formData.phone.trim().length !== 10 || !/^\d{10}$/.test(formData.phone.trim())) {
-      showToast( 'Please enter valid 10-digit phone number','Error');
+      showToast( 'Please enter valid 10-digit phone number','Error',true);
       return false;
     }
     if (!formData.baseSalary || isNaN(formData.baseSalary)) {
-      showToast( 'Please enter valid base salary','Error');
+      showToast( 'Please enter valid base salary','Error',true);
       return false;
     }
     if (!formData.overtimeRate || isNaN(formData.overtimeRate)) {
-      showToast('Error', 'Please enter valid overtime rate','Error');
+      showToast('Error', 'Please enter valid overtime rate','Error',true);
       return false;
     }
     if (!formData.joinedDate.trim()) {
-      showToast('Please select joined date','Error');
+      showToast('Please select joined date','Error',true);
       return false;
     }
     if (!formData.officeId) {
-      showToast('Please select office','Error');
+      showToast('Please select office','Error',true);
       return false;
     }
     if (!formData.accountNumber.trim()) {
-      showToast('Please enter account number','Error');
+      showToast('Please enter account number','Error',true);
       return false;
     }
     if (!/^\d{9,18}$/.test(formData.accountNumber.trim())) {
-      showToast('Please enter valid account number (9-18 digits)','Error');
+      showToast('Please enter valid account number (9-18 digits)','Error',true);
       return false;
     }
     if (!formData.ifscCode.trim()) {
-      showToast('Please enter IFSC code','Error');
+      showToast('Please enter IFSC code','Error',true);
       return false;
     }
     if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifscCode.trim().toUpperCase())) {
-      showToast('Please enter valid IFSC code','Error');
+      showToast('Please enter valid IFSC code','Error',true);
       return false;
     }
     return true;
@@ -450,6 +466,7 @@ function EmployeeManagement() {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
+         <ModalToast />
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ScrollView showsVerticalScrollIndicator={false}>

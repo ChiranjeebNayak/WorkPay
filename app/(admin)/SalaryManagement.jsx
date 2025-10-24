@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import uuid from 'react-native-uuid'
 import { url } from '../../constants/EnvValue'
-import { useContextData } from "../../context/EmployeeContext"
+import { ModalToast, useContextData } from "../../context/EmployeeContext"
 import { getToken } from "../../services/ApiService"
 
 function AdminSalaryManagement() {
@@ -52,6 +52,10 @@ function AdminSalaryManagement() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+          showToast(response.data.message,'Error');
+          return;
+      }
       const data = response.data;
       setPaymentData(data.payments);
     } catch (err) {
@@ -142,12 +146,16 @@ function AdminSalaryManagement() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+          showToast(response.data.message,"Error",true);
+          return;
+      }
       const data = response.data;
       showToast(data.message,"Success");
       fetchPaymentHistory();
       console.log(data)
     } catch (err) {
-      showToast(err.response.data.error,"Error")
+      showToast(err.response.data.error,"Error",true)
       console.log(err);
     }
 
@@ -175,7 +183,7 @@ function AdminSalaryManagement() {
             showToast( `Advance amount cannot exceed ₹${(selectedEmployee.baseSalary + 
         calculateMonthTotals(selectedEmployee.transactions).overtime 
         - calculateMonthTotals(selectedEmployee.transactions).deduction
-        -calculateMonthTotals(selectedEmployee.transactions).advance).toLocaleString()}`,'Error')
+        -calculateMonthTotals(selectedEmployee.transactions).advance).toLocaleString()}`,'Error',true)
       return
       }
       try {
@@ -195,6 +203,10 @@ function AdminSalaryManagement() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+          showToast(response.data.message,"Error",true);
+          return;
+      }
       const data = response.data;
       if(data.message){
         showToast(data.message,"Success");
@@ -203,7 +215,7 @@ function AdminSalaryManagement() {
         setAdvanceModalVisible(false)
       }
     } catch (err) {
-      showToast(err.response.data.error,"Error");
+      showToast(err.response.data.error,"Error",true);
       console.log(err);
     } finally {
       setProcessingAdvance(false);
@@ -234,6 +246,10 @@ function AdminSalaryManagement() {
           }
         }
       );
+      if(response.data.error){
+          showToast(response.data.message,"Error",true);
+          return;
+      }
       const data = response.data;
       if(data.message){
         showToast(data.message, "Success");
@@ -243,7 +259,7 @@ function AdminSalaryManagement() {
         setDeductionModalVisible(false);
       }
     } catch (err) {
-      showToast(err.response.data.error, "Error");
+      showToast(err.response.data.error, "Error",true);
       console.log(err);
     } finally {
       setProcessingDeduction(false);
@@ -444,6 +460,7 @@ function AdminSalaryManagement() {
         visible={advanceModalVisible}
         onRequestClose={() => setAdvanceModalVisible(false)}
       >
+        <ModalToast/>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -538,6 +555,7 @@ function AdminSalaryManagement() {
         visible={deductionModalVisible}
         onRequestClose={() => setDeductionModalVisible(false)}
       >
+        <ModalToast/>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>

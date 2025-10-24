@@ -84,6 +84,10 @@ function EmployeeDetails() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+         showToast(response.data.error,'Error');
+         return;
+      }
       setEmployee(response.data.data);
     } catch (error) {
       showToast(error.response.data.error,'Error');
@@ -101,6 +105,10 @@ function EmployeeDetails() {
         }
       }
       );
+      if(response.data.error){
+         showToast(response.data.message,'Error');
+         return;
+      }
       const data = response.data;
       setAttendanceData(data);
     }catch(error){
@@ -129,6 +137,10 @@ const fetchLeavesData = async ()=>{
         }
       }
       );
+      if(response.data.error){
+         showToast(response.data.message,'Error');
+         return;
+      }
       const data = response.data;
       setLeavesData(data)
     }catch(error){
@@ -152,6 +164,10 @@ const fetchPaymentsData = async ()=>{
         }
       }
       );
+      if(response.data.error){
+          showToast(response.data.message,'Error');
+          return;
+      }
       const data = response.data;
       setPaymentsData(data)
     }catch(error){
@@ -359,7 +375,9 @@ useEffect(()=>{
             <Text style={styles.overtimeText}>OT: ₹{employee.overtimeRate}/hr</Text>
           </View>
             <Text style={{fontWeight:"bold",color:"white"}}>Account No: {employee.accountNumber}</Text>
-              <Text style={{fontWeight:"bold",color:"white"}}>Account No: {employee.ifscCode}</Text>
+            <Text style={{fontWeight:"bold",color:"white"}}>IFSC No: {employee.ifscCode}</Text>
+            <Text style={{fontWeight:"bold",color:"white"}}>Office: {employee.officeName}</Text>
+            <Text style={{fontWeight:"bold",color:"white"}}>Office Coordinates: {employee.location}</Text>
         </View>
       
       </View>

@@ -73,6 +73,10 @@ const {showToast} = useContextData()
         }
       }
       );
+      if(response.data.error){
+        showToast(response.data.message,'Error');
+        return;
+      }
       const data = response.data;
       setAttendanceData(data);
     }catch(error){

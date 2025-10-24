@@ -88,6 +88,10 @@ function Home() {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+        showToast(response.data.error,'Error');
+        return;
+      }
       const data = response.data;
       setDashboardDetails(data);
       setEmployeeData(data.employeeDetails);
@@ -117,6 +121,14 @@ function Home() {
         return;
       }
 
+         // Check if user is within allowed range
+      const MAX_DISTANCE = officeLocation?.range; // meters
+      
+      if (!MAX_DISTANCE || MAX_DISTANCE <= 0) {
+          showToast('Office range is not set. Please contact your administrator.', 'Error');
+          return;
+      }
+
       // Get current location
       const userLocation = await getCurrentLocation();
       if (!userLocation) {
@@ -134,8 +146,8 @@ function Home() {
 
       console.log(`Distance from office: ${distance.toFixed(2)} meters`);
 
-      // Check if user is within allowed range
-      const MAX_DISTANCE = officeLocation?.range; // meters
+   
+
       const MIN_DISTANCE = 0;   // meters
 
       if (distance < MIN_DISTANCE || distance > MAX_DISTANCE) {
@@ -143,6 +155,7 @@ function Home() {
         return;
       }
 
+      
        const txnId = uuid.v4().replace(/-/g, '').slice(0, 8);
       // Proceed with attendance action if location is verified
       const response = await axios.post(`${url}/api/attendances/mark`, {
@@ -154,7 +167,10 @@ function Home() {
           'x-transaction-id': txnId
         }
       });
-      
+      if(response.data.error){
+        showToast(response.data.message,'Error');
+        return;
+      }
       const data = response.data;
       if(data){
         showToast(data.message,"Success");

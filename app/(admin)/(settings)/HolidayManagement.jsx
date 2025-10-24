@@ -54,7 +54,11 @@ function HolidayManagement() {
           fullDate: holiday.date
         }))
       }));
-      
+
+      if(response.data.error){
+        showToast( response.data.message,'Error');
+        return;
+      }
       setHolidays(transformedHolidays);
     } catch (error) {
       console.error('Error fetching holidays:', error);
@@ -82,6 +86,11 @@ function HolidayManagement() {
           'x-transaction-id': txnId
         }
       });
+
+      if(response.data.error){
+        showToast( response.data.message,'Error');
+        return;
+      }
 
       showToast( 'Holiday added successfully!','Success');
       setHolidayDate(null);
@@ -116,6 +125,10 @@ function HolidayManagement() {
         }
       });
 
+      if(response.data.error){
+        showToast( response.data.message,'Error');
+        return;
+      }
       showToast('Holiday deleted successfully!','Success');
       setDeleteModalVisible(false);
       setHolidayToDelete(null);

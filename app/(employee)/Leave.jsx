@@ -155,6 +155,10 @@ const formatDateForComparison = (date) => {
           'x-transaction-id': txnId,
         }
       });
+      if(response.data.error){
+        showToast(response.data.message, "Error");
+        return;
+      }
       
       // Store raw holidays for validation
       const allHolidays = [];
@@ -194,6 +198,10 @@ const formatDateForComparison = (date) => {
           'x-transaction-id': txnId,
         }
       });
+      if(response.data.error){
+        showToast(response.data.message, "Error");
+        return;
+      }
       setLeaveHistory(response.data.leaves);
     } catch (error) {
       showToast(error.response?.data?.error || "Failed to fetch leave history", 'Error');
@@ -254,8 +262,12 @@ const formatDateForComparison = (date) => {
           'x-transaction-id': txnId,
         }
       });
-      
-      if (response.data.message) {
+
+      if (response.data.error) {
+        showToast(response.data.message, "Error");
+        return;
+      }   
+      if (!response.data.error && response.data.message) {
         setStartDate('');
         setEndDate('');
         setDescription('');

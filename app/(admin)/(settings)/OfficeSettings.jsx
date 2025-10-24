@@ -9,7 +9,7 @@ import { Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet
 import { SafeAreaView } from 'react-native-safe-area-context';
 import uuid from 'react-native-uuid';
 import { url } from '../../../constants/EnvValue';
-import { useContextData } from "../../../context/EmployeeContext";
+import { ModalToast, useContextData } from "../../../context/EmployeeContext";
 import { useOfficeContextData } from "../../../context/OfficeContext";
 import { getToken } from '../../../services/ApiService';
 
@@ -44,6 +44,10 @@ function OfficeSettings() {
         }
       });
 
+      if(response.data.error){
+          showToast(response.data.message,'Error')
+          return;
+      }
       // Populate form data with fetched data
       const data = response.data;
       // setFormData({
@@ -119,19 +123,19 @@ const addOffice = async () => {
 
          // validate form data
       if(!formData.name || formData.name.trim() === ''){
-        showToast('Please enter office name','Warning')
+        showToast('Please enter office name','Warning',true)
         return
       }
       if (!checkinUTC || !checkoutUTC) {
-        showToast('Please select both start and end times','Warning')
+        showToast('Please select both start and end times','Warning',true)
         return;
       }
       if (formData.breakTime < 0) {
-        showToast('Break time cannot be negative','Warning')
+        showToast('Break time cannot be negative','Warning',true)
         return;
       }
       if (!formData.latitude || !formData.longitude) {
-        showToast('Please set the office location','Warning')
+        showToast('Please set the office location','Warning',true)
         return;
       }
 
@@ -151,6 +155,10 @@ const addOffice = async () => {
           'x-transaction-id': txnId
         }
       });
+      if(response.data.error){
+          showToast(response.data.message,'Error',true);
+          return;
+      }
       if(response.data.message){
         showToast('Office added successfully!', 'Success');
         setModalVisible(false);
@@ -159,7 +167,7 @@ const addOffice = async () => {
       }
   }catch (error) {
     console.error('Error adding office:', error.response.data.error);
-    showToast('Failed to add office', 'Error');
+    showToast('Failed to add office', 'Error', true);
   }finally {
     setIsLoading(false);
   }
@@ -198,19 +206,19 @@ const updateOfficeSettings = async () => {
 
         // validate form data
       if(!formData.name || formData.name.trim() === ''){
-        showToast('Please enter office name','Warning')
+        showToast('Please enter office name','Warning',true)
         return
       }
       if (!checkinUTC || !checkoutUTC) {
-        showToast('Please select both start and end times','Warning')
+        showToast('Please select both start and end times','Warning',true)
         return;
       }
       if (formData.breakTime < 0) {
-        showToast('Break time cannot be negative','Warning')
+        showToast('Break time cannot be negative','Warning',true)
         return;
       }
       if (!formData.latitude || !formData.longitude) {
-        showToast('Please set the office location','Warning')
+        showToast('Please set the office location','Warning',true)
         return;
       }
 
@@ -229,7 +237,10 @@ const updateOfficeSettings = async () => {
         'x-transaction-id': txnId
       }
     });
-
+    if(response.data.error){
+        showToast(response.data.message,'Error',true);
+        return;
+    }
     if(response.data.message){
       showToast('Office settings updated successfully!', 'Success');
       setModalVisible(false);
@@ -238,7 +249,7 @@ const updateOfficeSettings = async () => {
     }
   } catch (error) {
     console.error('Error updating office settings:', error);
-    showToast('Failed to update office settings', 'Error');
+    showToast('Failed to update office settings', 'Error', true);
   } finally {
     setIsLoading(false);
   }
@@ -253,6 +264,10 @@ const deleteOffice = async (officeId) => {
         'x-transaction-id': txnId
       }
     });
+    if(response.data.error){
+        showToast(response.data.message,'Error');
+        return;
+    }
     if(response.data.message){
       showToast('Office deleted successfully!', 'Success');
       fetchOfficeDetails();
@@ -284,10 +299,10 @@ const deleteOffice = async (officeId) => {
         longitude: location.coords.longitude
       }));
       
-      showToast( 'Current location captured successfully!','Success');
+      showToast( 'Current location captured successfully!','Success',true);
     } catch (error) {
       console.error('Error getting location:', error.response.data.error);
-      showToast('Failed to get current location','Error');
+      showToast('Failed to get current location','Error',true);
     } finally {
       setIsLoading(false);
     }
@@ -477,6 +492,7 @@ const deleteOffice = async (officeId) => {
           setModalVisible(!modalVisible);
         }}
       >
+        <ModalToast/>
          <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <ScrollView 
